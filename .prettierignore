@@ -1,0 +1,7 @@
+node_modules
+.next
+.vscode
+.vercel
+package.json
+database.rules.json
+*.spec.js

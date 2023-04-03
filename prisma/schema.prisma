@@ -5,6 +5,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator pothos {
+  provider = "prisma-pothos-types"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -103,7 +107,7 @@ model Post {
 
   modifiedAt                DateTime?              @default(now()) @map(name: "modified_at")
   createdAt                 DateTime?              @default(now()) @map(name: "created_at")
-  @@map(name: "psots")
+  @@map(name: "posts")
 }
 
 model Group {
@@ -163,6 +167,7 @@ model CategoriesOnPosts {
   createdAt     DateTime?  @default(now()) @map(name: "created_at")
 
   @@id([postId, categoryId])
+  @@map(name: "categories_posts_links")
 }
 
 // group <n:n> post
@@ -176,6 +181,7 @@ model GroupsOnPosts {
   createdAt     DateTime?  @default(now()) @map(name: "created_at")
 
   @@id([postId, groupId])
+  @@map(name: "groups_posts_links")
 }
 
 // tag <n:n> post
@@ -189,5 +195,6 @@ model TagsOnPosts {
   createdAt     DateTime?  @default(now()) @map(name: "created_at")
 
   @@id([postId, tagId])
+  @@map(name: "tags_posts_links")
 }
 
