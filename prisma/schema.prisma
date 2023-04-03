@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  READER
+  WRITTER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  BLOCKED
+  DELETED
+}
+
+enum ProfileActivationStatus {
+  PENDING
+  AWAITING_CONFIRMATION
+  COMPLETED
+  ERROR 
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  surname       String
+  email         String    @unique
+  emailVerified DateTime? @map(name: "email_verified")
+  profile       Profile?
+  posts         Post[]
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  @@map(name: "users")
+}
+
+enum Permissions {
+  ADMIN
+}
+
+model Profile {
+  id                      String                   @id @default(cuid())
+  user                    User                     @relation(fields: [id], references: [email])
+  accountType             AccountType?
+  activationStatus        ProfileActivationStatus? @default(PENDING)
+  permission              Permissions?             @default(ADMIN)
+  address                 String?
+  postalCode              String?
+  country                 String?
+  city                    String?
+  province                String?
+  mobile                  String?
+
+  modifiedAt              DateTime?                @default(now()) @map(name: "modified_at")
+  createdAt               DateTime?                @default(now()) @map(name: "created_at")
+  @@map(name: "profiles")
+}
+
+model Tag {
+  id            String    @id @default(cuid())
+  name          String
+
+  posts         TagsOnPosts[]
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  @@map(name: "tags")
+}
+
+
+model Post {
+  id                        String                @id @default(cuid())
+  title                     String
+  description               String?
+  content                   String
+  slug                      String
+  isPinned                  Boolean?              @default(false) @map(name: "is_pinned")
+  isBlocked                 Boolean?              @default(false) @map(name: "is_blocked")
+  isTrending                Boolean?              @default(false) @map(name: "is_trending")
+  isLocked                  Boolean?              @default(false) @map(name: "is_locked")
+  isPrivate                 Boolean?              @default(false) @map(name: "is_private")
+  isInternal                Boolean?              @default(false) @map(name: "is_internal")
+  allowCommentByPicture     Boolean?              @default(false) @map(name: "allow_comment_by_picture")
+  type                      PostStatus?           @default(DRAFT)
+
+  author                    User                  @relation(fields: [authorId], references: [id])
+  authorId                  String
+
+  groups                    GroupsOnPosts[]
+  tags                      TagsOnPosts[]
+  categories                CategoriesOnPosts[]
+
+  comments                  Comment[]
+
+  modifiedAt                DateTime?              @default(now()) @map(name: "modified_at")
+  createdAt                 DateTime?              @default(now()) @map(name: "created_at")
+  @@map(name: "psots")
+}
+
+model Group {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  slug          String
+  isPrivate     Boolean?  @default(false) @map(name: "is_private")
+
+  posts         GroupsOnPosts[]
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+
+  @@map(name: "groups")
+}
+
+model Category {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  color         String?
+  slug          String
+  isPrivate     Boolean?  @default(false) @map(name: "is_private")
+
+  posts         CategoriesOnPosts[]
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+
+  @@map(name: "categories")
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  content       String
+  isBlocked     Boolean?  @default(false) @map(name: "is_private")
+
+  post          Post      @relation(fields: [postId], references: [id])
+  postId        String
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+
+  @@map(name: "comments")
+}
+
+
+// category <n:n> post
+model CategoriesOnPosts {
+  post          Post      @relation(fields: [postId], references: [id])
+  postId        String
+  category      Category  @relation(fields: [categoryId], references: [id])
+  categoryId    String
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+
+  @@id([postId, categoryId])
+}
+
+// group <n:n> post
+model GroupsOnPosts {
+  post          Post      @relation(fields: [postId], references: [id])
+  postId        String
+  group         Group      @relation(fields: [groupId], references: [id])
+  groupId       String
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+
+  @@id([postId, groupId])
+}
+
+// tag <n:n> post
+model TagsOnPosts {
+  post          Post      @relation(fields: [postId], references: [id])
+  postId        String
+  tag           Tag       @relation(fields: [tagId], references: [id])
+  tagId         String
+
+  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
+  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+
+  @@id([postId, tagId])
+}
+
