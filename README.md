@@ -29,3 +29,5 @@ Authen endpoints:
 * `/api/auth/logout`: The route used to logout the user.
 * `/api/auth/callback`: The route Auth0 redirects the user to after a successful login.
 * `/api/auth/me`: The route to fetch the user profile from Auth0.
+
+# Store files with Firebase storage

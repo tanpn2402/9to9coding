@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html.dark .text-main {
+  @apply text-white;
+}
+
+html.light .text-main {
+  @apply text-gray-100;
+}
+
+.flex-center {
+  @apply flex items-center justify-center;
+}

@@ -1,13 +1,12 @@
 import Head from 'next/head';
-import { Inter } from 'next/font/google';
-import styles from '@/styles/Home.module.css';
 import { gql, useQuery } from '@apollo/client';
-import type { User } from '@prisma/client';
+import type { Category, Post, Tag, User } from '@prisma/client';
 import Header from '@/components/Layout/Header';
+import { classNames } from '@/utils';
 
-const AllUsersQuery = gql`
-  query queryUsers($first: Int, $after: ID) {
-    users(first: $first, after: $after) {
+const AllPostsQuery = gql`
+  query queryPosts($first: Int, $after: ID) {
+    posts(first: $first, after: $after) {
       pageInfo {
         endCursor
         hasNextPage
@@ -16,22 +15,44 @@ const AllUsersQuery = gql`
         cursor
         node {
           id
-          name
-          email
+          title
+          description
+          createdAt
+          modifiedAt
+          author {
+            id
+            name
+            email
+          }
+          categories {
+            category {
+              id
+              name
+              slug
+            }
+          }
+          tags {
+            tag {
+              id
+              name
+            }
+          }
         }
       }
     }
   }
 `;
 
-const inter = Inter({ subsets: ['latin'] });
-
 type TNode = {
-  node: User;
+  node: Post & {
+    categories: [{ category: Category }];
+    tags: [{ tag: Tag }];
+    author: User;
+  };
 };
 
 type TData = {
-  users: {
+  posts: {
     pageInfo: {
       endCursor: any;
       hasNextPage: boolean;
@@ -41,8 +62,8 @@ type TData = {
 };
 
 export default function Home() {
-  const { data, loading, error, fetchMore } = useQuery<TData>(AllUsersQuery, {
-    variables: { first: 1 }
+  const { data, loading, error, fetchMore } = useQuery<TData>(AllPostsQuery, {
+    variables: { first: 20 }
   });
 
   let main;
@@ -55,17 +76,58 @@ export default function Home() {
   }
   // If has data
   else {
-    const { endCursor, hasNextPage } = data!.users.pageInfo;
+    const { endCursor, hasNextPage } = data!.posts.pageInfo;
+    const mainGridClasses = 'grid grid-cols-12 gap-2';
+
     main = (
       <>
-        <div className={styles.grid}>
-          {data?.users?.edges?.map?.(({ node: user }) => (
-            <a key={`User-#${user.id}`} href='#' className={styles.card}>
-              <h2 className={inter.className}>{user.name}</h2>
-              <p className={inter.className}>{user.email}</p>
-            </a>
-          ))}
+        <div
+          className={classNames(
+            mainGridClasses,
+            // 'bg-gray-200 dark:bg-slate-700'
+            'text-sm px-4 py-2'
+          )}>
+          <div className='col-span-8'>Bài viết</div>
+          <div className='col-span-2'>Chủ đề</div>
+          <div className='col-span-2'>Thời gian</div>
         </div>
+
+        {data?.posts?.edges?.map?.(({ node: post }, index) => (
+          <div
+            key={`User-#${post.id}`}
+            className={classNames(
+              mainGridClasses,
+              index % 2 === 0 ? 'bg-gray-100 dark:bg-[#202324]' : 'dark:bg-[#191b1c]',
+              'text-sm p-4'
+            )}>
+            <div className='col-span-8'>
+              <div className='flex items-center w-full'>
+                <div className='mr-2 rounded-full w-10 h-10 flex-center bg-green-500'>
+                  {post.author.name.charAt(0)}
+                </div>
+                <div className='flex-1'>
+                  <div className='font-normal mb-2 text-base'>{post.title}</div>
+                  <div className='flex items-center'>
+                    {post.tags.map(({ tag }) => (
+                      <div
+                        key={`Tag#${tag.id}`}
+                        className='rounded-md px-2 py-1 bg-gray-200 dark:bg-gray-600 mr-2'>
+                        {tag.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className='col-span-2'>
+              {post.categories.map(({ category }) => (
+                <div key={`Category#${category.id}`}>{category.name}</div>
+              ))}
+            </div>
+            <div className='col-span-2'>{post.createdAt?.toString?.() ?? ''}</div>
+          </div>
+        ))}
+
         {hasNextPage ? (
           <button
             className='px-4 py-2 bg-blue-500 text-white rounded my-10'
@@ -73,9 +135,9 @@ export default function Home() {
               fetchMore({
                 variables: { after: endCursor },
                 updateQuery: (prevResult, { fetchMoreResult }) => {
-                  fetchMoreResult.users.edges = [
-                    ...prevResult.users.edges,
-                    ...fetchMoreResult.users.edges
+                  fetchMoreResult.posts.edges = [
+                    ...prevResult.posts.edges,
+                    ...fetchMoreResult.posts.edges
                   ];
                   return fetchMoreResult;
                 }
@@ -99,7 +161,7 @@ export default function Home() {
         <link rel='icon' href='/favicon.ico' />
       </Head>
       <Header />
-      <main className='container mx-auto min-h-screen py-24'>{main}</main>
+      <main className='container mx-auto min-h-screen py-24 text-main'>{main}</main>
     </>
   );
 }
