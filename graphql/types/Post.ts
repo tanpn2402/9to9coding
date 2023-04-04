@@ -31,3 +31,34 @@ builder.queryField('posts', t =>
     resolve: (query, _parent, _args, _ctx, _info) => prisma.post.findMany({ ...query })
   })
 );
+
+builder.mutationField('createPost', t =>
+  t.prismaField({
+    type: 'Post',
+    args: {
+      title: t.arg.string({ required: true }),
+      description: t.arg.string({ required: false }),
+      content: t.arg.string({ required: true }),
+      slug: t.arg.string({ required: true }),
+      authorId: t.arg.string({ required: true })
+    },
+    resolve: async (query, _parent, args, ctx) => {
+      const { title, description, content, slug, authorId } = args;
+
+      if (!(await ctx).user) {
+        throw new Error('You have to be logged in to perform this action');
+      }
+
+      return prisma.post.create({
+        ...query,
+        data: {
+          title,
+          description,
+          content,
+          slug: slug.toLowerCase().replaceAll(" ", "-"),
+          authorId
+        }
+      });
+    }
+  })
+);
