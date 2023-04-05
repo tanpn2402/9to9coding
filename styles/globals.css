@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: 'Source Code Pro', system-ui, sans-serif;
+  }
+}
+
 html.dark .text-main {
   @apply text-white;
 }
@@ -12,4 +18,14 @@ html.light .text-main {
 
 .flex-center {
   @apply flex items-center justify-center;
+}
+
+.link {
+  @apply bg-gradient-to-r from-black dark:from-gray-500 to-black dark:to-gray-500;
+  @apply bg-[length:0px_3px] bg-left-bottom bg-no-repeat transition-[background-size] duration-500 hover:bg-[length:100%_3px] group-hover:bg-[length:100%_3px];
+}
+
+.link-sm {
+  @apply link;
+  @apply bg-[length:0px_1px] hover:bg-[length:100%_1px] group-hover:bg-[length:100%_1px];
 }

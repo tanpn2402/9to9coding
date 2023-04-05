@@ -3,6 +3,10 @@ import { gql, useQuery } from '@apollo/client';
 import type { Category, Post, Tag, User } from '@prisma/client';
 import Header from '@/components/Layout/Header';
 import { classNames } from '@/utils';
+import { format, formatDistance } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import Link from 'next/link';
+import { BASE_POST_URL } from '@/utils/config';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int, $after: ID) {
@@ -19,6 +23,7 @@ const AllPostsQuery = gql`
           description
           createdAt
           modifiedAt
+          slug
           author {
             id
             name
@@ -29,6 +34,7 @@ const AllPostsQuery = gql`
               id
               name
               slug
+              color
             }
           }
           tags {
@@ -77,7 +83,7 @@ export default function Home() {
   // If has data
   else {
     const { endCursor, hasNextPage } = data!.posts.pageInfo;
-    const mainGridClasses = 'grid grid-cols-12 gap-2';
+    const mainGridClasses = 'grid grid-cols-12 gap-2 items-center rounded-sm';
 
     main = (
       <>
@@ -106,12 +112,18 @@ export default function Home() {
                   {post.author.name.charAt(0)}
                 </div>
                 <div className='flex-1'>
-                  <div className='font-normal mb-2 text-base'>{post.title}</div>
+                  <div className='font-normal mb-1 text-base'>
+                    <Link
+                      href={`${BASE_POST_URL}/${post.slug}`}
+                      className='link-sm'>
+                      {post.title}
+                    </Link>
+                  </div>
                   <div className='flex items-center'>
                     {post.tags.map(({ tag }) => (
                       <div
                         key={`Tag#${tag.id}`}
-                        className='rounded-md px-2 py-1 bg-gray-200 dark:bg-gray-600 mr-2'>
+                        className='rounded-sm px-2 bg-gray-200 bg-gray-400 mr-2 text-xs text-white'>
                         {tag.name}
                       </div>
                     ))}
@@ -121,10 +133,24 @@ export default function Home() {
             </div>
             <div className='col-span-2'>
               {post.categories.map(({ category }) => (
-                <div key={`Category#${category.id}`}>{category.name}</div>
+                <div
+                  key={`Category#${category.id}`}
+                  className={classNames(
+                    'rounded-sm px-2 py-2 bg-gray-200 mr-2 text-xs w-fit text-white'
+                  )}
+                  style={{ backgroundColor: category.color! }}>
+                  {category.name}
+                </div>
               ))}
             </div>
-            <div className='col-span-2'>{post.createdAt?.toString?.() ?? ''}</div>
+            <div className='col-span-2'>
+              {post.createdAt
+                ? formatDistance(new Date(post.createdAt), new Date(), {
+                    includeSeconds: true,
+                    locale: vi
+                  })
+                : ''}
+            </div>
           </div>
         ))}
 
