@@ -7,6 +7,7 @@ import { format, formatDistance } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { BASE_POST_URL } from '@/utils/config';
+import { useMantineColorScheme, useMantineTheme } from '@mantine/core';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int, $after: ID) {
@@ -68,6 +69,7 @@ type TData = {
 };
 
 export default function Home() {
+  const theme = useMantineTheme();
   const { data, loading, error, fetchMore } = useQuery<TData>(AllPostsQuery, {
     variables: { first: 20 }
   });
@@ -87,12 +89,7 @@ export default function Home() {
 
     main = (
       <>
-        <div
-          className={classNames(
-            mainGridClasses,
-            // 'bg-gray-200 dark:bg-slate-700'
-            'text-sm px-4 py-2'
-          )}>
+        <div className={classNames(mainGridClasses, 'text-sm px-4 py-2')}>
           <div className='col-span-8'>Bài viết</div>
           <div className='col-span-2'>Chủ đề</div>
           <div className='col-span-2'>Thời gian</div>
@@ -101,11 +98,17 @@ export default function Home() {
         {data?.posts?.edges?.map?.(({ node: post }, index) => (
           <div
             key={`User-#${post.id}`}
-            className={classNames(
-              mainGridClasses,
-              index % 2 === 0 ? 'bg-gray-100 dark:bg-[#202324]' : 'dark:bg-[#191b1c]',
-              'text-sm p-4'
-            )}>
+            className={classNames(mainGridClasses, 'text-sm p-4')}
+            style={{
+              background:
+                index % 2 === 0
+                  ? theme.colorScheme === 'dark'
+                    ? theme.colors.dark[6]
+                    : theme.colors.gray[1]
+                  : theme.colorScheme === 'dark'
+                  ? theme.colors.dark[7]
+                  : theme.colors.gray[0]
+            }}>
             <div className='col-span-8'>
               <div className='flex items-center w-full'>
                 <div className='mr-2 rounded-full w-10 h-10 flex-center bg-green-500'>
@@ -113,9 +116,7 @@ export default function Home() {
                 </div>
                 <div className='flex-1'>
                   <div className='font-normal mb-1 text-base'>
-                    <Link
-                      href={`${BASE_POST_URL}/${post.slug}`}
-                      className='link-sm'>
+                    <Link href={`${BASE_POST_URL}/${post.slug}`} className='link-sm'>
                       {post.title}
                     </Link>
                   </div>
@@ -172,7 +173,7 @@ export default function Home() {
             more
           </button>
         ) : (
-          <p className='my-10 text-center font-medium'>You've reached the end! </p>
+          <p className='my-10 text-center font-medium'>You{"'"}ve reached the end! </p>
         )}
       </>
     );

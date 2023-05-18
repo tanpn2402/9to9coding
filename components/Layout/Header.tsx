@@ -1,43 +1,16 @@
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment } from 'react';
 import Link from 'next/link';
 import { useUser } from '@auth0/nextjs-auth0/client';
-import { Switch } from '@headlessui/react';
 import { Menu, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import { classNames } from '@/utils';
+import { useMantineTheme, useMantineColorScheme, ActionIcon } from '@mantine/core';
+import { IconSun, IconMoonStars } from '@tabler/icons-react';
 
 const Header = () => {
+  const theme = useMantineTheme();
   const { user, error, isLoading } = useUser();
-  const [isDarkEnabled, setDarkEnabled] = useState<boolean>(false);
-
-  useEffect(() => {
-    // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-    if (
-      localStorage.theme === 'dark' ||
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    ) {
-      document.documentElement.classList.add('dark');
-      setDarkEnabled(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setDarkEnabled(false);
-    }
-  }, []);
-
-  const handleChangeTheme = useCallback(
-    (isDark: boolean) => {
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-        localStorage.theme = 'dark';
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.theme = 'light';
-      }
-
-      setDarkEnabled(isDark);
-    },
-    [isDarkEnabled]
-  );
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const isDarkEnabled = colorScheme === 'dark';
 
   let rightMenu;
 
@@ -125,7 +98,11 @@ const Header = () => {
   }
 
   return (
-    <header className='bg-gray-100 dark:bg-[#191b1c] text-main body-font fixed w-full z-50'>
+    <header
+      className='text-main body-font fixed w-full z-50'
+      style={{
+        backgroundColor: isDarkEnabled ? theme.colors.dark[8] : theme.colors.gray[1]
+      }}>
       <div className='container mx-auto flex flex-nowrap px-5 items-center h-[60px]'>
         <nav className='flex items-center text-base h-full'>
           <Link href='/' className='flex title-font font-medium items-center mr-2 md:mr-8'>
@@ -154,22 +131,13 @@ const Header = () => {
         </nav>
         <nav className='ml-auto flex flex-wrap items-center text-base justify-center'>
           <span className='mr-4'>{isDarkEnabled ? 'dark' : 'light'}</span>
-          <Switch
-            checked={isDarkEnabled}
-            onChange={handleChangeTheme}
-            className={classNames(
-              isDarkEnabled ? 'bg-indigo-600' : 'bg-gray-200',
-              'mr-8 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2'
-            )}>
-            <span className='sr-only'>use setting</span>
-            <span
-              aria-hidden='true'
-              className={classNames(
-                isDarkEnabled ? 'translate-x-5' : 'translate-x-0',
-                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
-              )}
-            />
-          </Switch>
+          <ActionIcon
+            variant='outline'
+            color={isDarkEnabled ? 'yellow' : 'blue'}
+            onClick={() => toggleColorScheme(isDarkEnabled ? 'light' : 'dark')}
+            title='Toggle color scheme'>
+            {isDarkEnabled ? <IconSun size='1.1rem' /> : <IconMoonStars size='1.1rem' />}
+          </ActionIcon>
           {rightMenu}
         </nav>
       </div>

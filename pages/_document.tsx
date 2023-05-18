@@ -1,20 +1,20 @@
-import { Html, Head, Main, NextScript } from 'next/document';
+import Document, { DocumentContext } from 'next/document';
+import { ServerStyles, createStylesServer } from '@mantine/next';
+import { defaultCache } from '@/emotion-cache';
 
-export default function Document() {
-  return (
-    <Html lang='en' className='dark'>
-      <Head>
-        <link rel='preconnect' href='https://fonts.googleapis.com' />
-        <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
-        <link
-          href='https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&display=swap'
-          rel='stylesheet'
-        />
-      </Head>
-      <body className='bg-white dark:bg-[#1c1e20]'>
-        <Main />
-        <NextScript />
-      </body>
-    </Html>
-  );
+const stylesServer = createStylesServer(defaultCache);
+
+export default class _Document extends Document {
+  static async getInitialProps(ctx: DocumentContext) {
+    const initialProps = await Document.getInitialProps(ctx);
+    return {
+      ...initialProps,
+      styles: (
+        <>
+          {initialProps.styles}
+          <ServerStyles html={initialProps.html} server={stylesServer} />
+        </>
+      )
+    };
+  }
 }
