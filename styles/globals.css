@@ -29,3 +29,5 @@ html.light .text-main {
   @apply link;
   @apply bg-[length:0px_1px] hover:bg-[length:100%_1px] group-hover:bg-[length:100%_1px];
 }
+
+@import url(./editor.css);
