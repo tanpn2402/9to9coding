@@ -19,7 +19,8 @@ export const builder = new SchemaBuilder<{
   plugins: [PrismaPlugin, RelayPlugin],
   relayOptions: {},
   prisma: {
-    client: prisma
+    client: prisma,
+    filterConnectionTotalCount: true
   }
 });
 

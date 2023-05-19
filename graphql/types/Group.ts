@@ -9,7 +9,10 @@ builder.prismaObject('Group', {
     slug: t.exposeString('slug'),
     isPrivate: t.exposeBoolean('isPrivate', { nullable: true }),
 
-    posts: t.relation('posts', {}),
+    posts: t.relatedConnection('posts', {
+      cursor: 'postId_groupId',
+      totalCount: true
+    }),
 
     createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
     modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
@@ -33,6 +36,7 @@ builder.queryField('groups', t =>
   t.prismaConnection({
     type: 'Group',
     cursor: 'id',
+    totalCount: (_connection, _args, _ctx, _info) => prisma.group.count(),
     resolve: (query, _parent, _args, _ctx, _info) => prisma.group.findMany({ ...query })
   })
 );

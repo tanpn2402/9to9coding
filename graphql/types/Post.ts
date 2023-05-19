@@ -13,7 +13,10 @@ builder.prismaObject('Post', {
     categories: t.relation('categories', {}),
     groups: t.relation('groups', {}),
     tags: t.relation('tags', {}),
-    comments: t.relation('comments', {}),
+    comments: t.relatedConnection('comments', {
+      cursor: 'id',
+      totalCount: true
+    }),
 
     createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
     modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
@@ -28,6 +31,7 @@ builder.queryField('posts', t =>
   t.prismaConnection({
     type: 'Post',
     cursor: 'id',
+    totalCount: (_connection, _args, _ctx, _info) => prisma.post.count(),
     resolve: (query, _parent, _args, _ctx, _info) => prisma.post.findMany({ ...query })
   })
 );
@@ -55,7 +59,7 @@ builder.mutationField('createPost', t =>
           title,
           description,
           content,
-          slug: slug.toLowerCase().replaceAll(" ", "-"),
+          slug: slug.toLowerCase().replaceAll(' ', '-'),
           authorId
         }
       });

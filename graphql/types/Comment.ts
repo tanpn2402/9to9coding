@@ -18,6 +18,7 @@ builder.queryField('comments', t =>
   t.prismaConnection({
     type: 'Comment',
     cursor: 'id',
+    totalCount: (_connection, _args, _ctx, _info) => prisma.comment.count(),
     resolve: (query, _parent, _args, _ctx, _info) => prisma.comment.findMany({ ...query })
   })
 );

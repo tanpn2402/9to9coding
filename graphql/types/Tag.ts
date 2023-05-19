@@ -6,7 +6,10 @@ builder.prismaObject('Tag', {
     id: t.exposeID('id'),
     name: t.exposeString('name'),
 
-    posts: t.relation('posts', {}),
+    posts: t.relatedConnection('posts', {
+      cursor: 'postId_tagId',
+      totalCount: true
+    }),
 
     createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
     modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
@@ -30,6 +33,7 @@ builder.queryField('tags', t =>
   t.prismaConnection({
     type: 'Tag',
     cursor: 'id',
+    totalCount: (_connection, _args, _ctx, _info) => prisma.tag.count(),
     resolve: (query, _parent, _args, _ctx, _info) => prisma.tag.findMany({ ...query })
   })
 );

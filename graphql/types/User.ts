@@ -8,7 +8,10 @@ builder.prismaObject('User', {
     email: t.exposeString('email'),
     emailVerified: t.expose('emailVerified', { type: 'DateTime', nullable: true }),
 
-    posts: t.relation('posts', {}),
+    posts: t.relatedConnection('posts', {
+      cursor: 'id',
+      totalCount: true
+    }),
 
     createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
     modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
@@ -19,6 +22,7 @@ builder.queryField('users', t =>
   t.prismaConnection({
     type: 'User',
     cursor: 'id',
+    totalCount: (_connection, _args, _ctx, _info) => prisma.user.count(),
     resolve: (query, _parent, _args, _ctx, _info) => prisma.user.findMany({ ...query })
   })
 );

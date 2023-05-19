@@ -10,7 +10,10 @@ builder.prismaObject('Category', {
     slug: t.exposeString('slug'),
     isPrivate: t.exposeBoolean('isPrivate', { nullable: true }),
 
-    posts: t.relation('posts', {}),
+    posts: t.relatedConnection('posts', {
+      cursor: 'postId_categoryId',
+      totalCount: true
+    }),
 
     createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
     modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
@@ -34,6 +37,7 @@ builder.queryField('categories', t =>
   t.prismaConnection({
     type: 'Category',
     cursor: 'id',
+    totalCount: (_connection, _args, _ctx, _info) => prisma.category.count(),
     resolve: (query, _parent, _args, _ctx, _info) => prisma.category.findMany({ ...query })
   })
 );
