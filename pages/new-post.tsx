@@ -17,10 +17,18 @@ import { lowlight } from 'lowlight';
 import tsLanguageSyntax from 'highlight.js/lib/languages/typescript';
 import {
   IconColumnInsertRight,
-  IconPhoto,
+  IconLink,
+  IconPhotoPlus,
+  IconPhotoShare,
   IconRowInsertBottom,
-  IconTable
+  IconTable,
+  IconUpload
 } from '@tabler/icons-react';
+import { Button, FileInput, Flex, Loader, Popover, TextInput, rem } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useState } from 'react';
+import { forEach, isArray } from 'lodash';
+
 // register languages that your are planning to use
 lowlight.registerLanguage('ts', tsLanguageSyntax);
 
@@ -33,100 +41,124 @@ function escapeHtml(unsafe: string) {
     .replace(/'/g, '&#039;');
 }
 
-const content = `<h2 style="text-align: center;">Welcome to Mantine rich text editor</h2>
-  <p>
-    <code>RichTextEditor</code> component focuses on usability and is designed to be as simple as possible to bring a familiar editing experience to regular users. <code>RichTextEditor</code> is based on <a href="https://tiptap.dev/" rel="noopener noreferrer" target="_blank">Tiptap.dev</a> and supports all of its features:
-  </p>
-  <ul>
-    <li>General text formatting: <strong>bold</strong>, <em>italic</em>, <u>underline</u>, <s>strike-through</s>
-    </li>
-    <li>Headings (h1-h6)</li>
-    <li>Sub and super scripts ( <sup>&lt;sup /&gt;</sup> and <sub>&lt;sub /&gt;</sub> tags) </li>
-    <li>Ordered and bullet lists</li>
-    <li>Text align&nbsp;</li>
-    <li>And all <a href="https://tiptap.dev/extensions" target="_blank" rel="noopener noreferrer">other extensions</a>
-    </li>
-  </ul>
-  <pre>
-  <code>${escapeHtml(`// Valid braces Kata – https://www.codewars.com/kata/5277c8a221e209d3f6000b56
-
-  const pairs: Record<string, string> = {
-    '[': ']',
-    '{': '}',
-    '(': ')',
-  };
-  
-  const openBraces = Object.keys(pairs);
-  
-  export function validBraces(braces: string) {
-    const opened: string[] = [];
-  
-    for (let i = 0; i < braces.length; i += 1) {
-      const brace = braces[i];
-  
-      if (openBraces.includes(brace)) {
-        opened.push(brace);
-        continue;
-      }
-  
-      if (pairs[opened[opened.length - 1]] !== brace) {
-        return false
-      }
-  
-      opened.pop();
-    }
-  
-    return opened.length === 0;
-  }`)}</code>
-  </pre>
-  <p>Table</p>
-  <table>
-        <tbody>
-          <tr>
-            <th>Name</th>
-            <th colspan="3">Description</th>
-          </tr>
-          <tr>
-            <td>Cyndi Lauper</td>
-            <td>singer</td>
-            <td>songwriter</td>
-            <td>actress</td>
-          </tr>
-          <tr>
-            <td>Marie Curie</td>
-            <td>scientist</td>
-            <td>chemist</td>
-            <td>physicist</td>
-          </tr>
-          <tr>
-            <td>Indira Gandhi</td>
-            <td>prime minister</td>
-            <td colspan="2">politician</td>
-          </tr>
-        </tbody>
-      </table>`;
+const content = `<p>Bắt đầu viết những thứ hay ho...</p><p></p>`;
 
 const ButtonStyles = { width: 38, height: 34 };
 
+type InsertPhotoUrlForm = {
+  url: string;
+};
+
 function InsertPhotoControl() {
+  const [opened, setOpened] = useState(false);
   const { editor } = useRichTextEditorContext();
+  const insertPhotoURLForm = useForm<InsertPhotoUrlForm>({
+    initialValues: {
+      url: ''
+    },
+    validate: {
+      url: value =>
+        /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gm.test(
+          value
+        )
+          ? null
+          : 'Invalid URL'
+    }
+  });
 
-  const addImage = () => {
-    const url = window.prompt('URL');
+  const addPhotoFromUrl = ({ url }: InsertPhotoUrlForm) => {
+    editor.chain().focus().setImage({ src: url }).run();
+    insertPhotoURLForm.reset();
+    setOpened(false);
+  };
 
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+  return (
+    <Popover width={350} position='bottom' shadow='md' opened={opened} onChange={setOpened}>
+      <Popover.Target>
+        <RichTextEditor.Control
+          aria-label='Insert photo from URL'
+          title='Insert photo from URL'
+          style={ButtonStyles}
+          onClick={() => setOpened(true)}>
+          <IconPhotoPlus stroke={1.5} size='1rem' />
+        </RichTextEditor.Control>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <form onSubmit={insertPhotoURLForm.onSubmit(addPhotoFromUrl)}>
+          <Flex align='flex-end'>
+            <TextInput
+              icon={<IconLink size={rem(14)} />}
+              placeholder='Enter photo URL'
+              size='xs'
+              label='Photo URL'
+              className='mr-2 w-full'
+              {...insertPhotoURLForm.getInputProps('url')}
+            />
+            <Button type='submit' size='xs'>
+              Insert
+            </Button>
+          </Flex>
+        </form>
+      </Popover.Dropdown>
+    </Popover>
+  );
+}
+
+function UploadPhotoControl() {
+  const [opened, setOpened] = useState(false);
+  const { editor } = useRichTextEditorContext();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const uploadPhoto = (ev: File | null) => {
+    if (ev) {
+      const body = new FormData();
+      body.append('file', ev);
+      setIsLoading(true);
+      fetch('/api/file/upload', {
+        method: 'POST',
+        body
+      })
+        .then(resp => {
+          return resp.json();
+        })
+        .then(json => {
+          if (isArray(json)) {
+            forEach(json, (url: string) => {
+              editor.chain().focus().setImage({ src: url }).run();
+            });
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+          setOpened(false);
+        });
     }
   };
 
   return (
-    <RichTextEditor.Control
-      onClick={() => addImage()}
-      aria-label='Insert photo'
-      title='Insert photo'
-      style={ButtonStyles}>
-      <IconPhoto stroke={1.5} size='1rem' />
-    </RichTextEditor.Control>
+    <>
+      <Popover width={250} position='bottom' shadow='md' opened={opened} onChange={setOpened}>
+        <Popover.Target>
+          <RichTextEditor.Control
+            onClick={() => setOpened(true)}
+            aria-label='Insert photo from device'
+            title='Insert photo from device'
+            style={ButtonStyles}>
+            <IconPhotoShare stroke={1.5} size='1rem' />
+          </RichTextEditor.Control>
+        </Popover.Target>
+        <Popover.Dropdown>
+          <FileInput
+            size='xs'
+            label='Your photo'
+            placeholder='Your photo'
+            icon={isLoading ? <Loader size={rem(14)} /> : <IconUpload size={rem(14)} />}
+            onChange={uploadPhoto}
+            disabled={isLoading}
+          />
+        </Popover.Dropdown>
+      </Popover>
+    </>
   );
 }
 
@@ -359,6 +391,7 @@ export default function Demo() {
           <RichTextEditor.ControlsGroup>
             <RichTextEditor.CodeBlock sx={ButtonStyles} />
             <InsertPhotoControl />
+            <UploadPhotoControl />
           </RichTextEditor.ControlsGroup>
 
           <TableControls
