@@ -1,4 +1,5 @@
 import { builder } from '../builder';
+import generateSlug from 'slug';
 
 builder.prismaObject('Post', {
   fields: t => ({
@@ -43,24 +44,57 @@ builder.mutationField('createPost', t =>
       title: t.arg.string({ required: true }),
       description: t.arg.string({ required: false }),
       content: t.arg.string({ required: true }),
-      slug: t.arg.string({ required: true }),
-      authorId: t.arg.string({ required: true })
+      categories: t.arg.stringList({ required: false }),
+      tags: t.arg.stringList({ required: false })
     },
     resolve: async (query, _parent, args, ctx) => {
-      const { title, description, content, slug, authorId } = args;
+      const { title, description, content, categories, tags } = args;
 
-      if (!(await ctx).user) {
+      const author = (await ctx).user;
+
+      if (!author) {
         throw new Error('You have to be logged in to perform this action');
       }
 
       return prisma.post.create({
         ...query,
         data: {
+          slug: generateSlug(title),
           title,
           description,
           content,
-          slug: slug.toLowerCase().replaceAll(' ', '-'),
-          authorId
+          authorId: author.id,
+          tags: {
+            create: (tags ?? []).map(tag => ({
+              tag: {
+                connectOrCreate: {
+                  where: {
+                    id: tag
+                  },
+                  create: {
+                    id: tag,
+                    name: tag
+                  }
+                }
+              }
+            }))
+          },
+          categories: {
+            create: (categories ?? []).map(category => ({
+              category: {
+                connectOrCreate: {
+                  where: {
+                    id: category
+                  },
+                  create: {
+                    slug: generateSlug(category),
+                    id: category,
+                    name: category
+                  }
+                }
+              }
+            }))
+          }
         }
       });
     }

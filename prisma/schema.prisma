@@ -10,8 +10,10 @@ generator pothos {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum AccountType {
@@ -30,7 +32,7 @@ enum ProfileActivationStatus {
   PENDING
   AWAITING_CONFIRMATION
   COMPLETED
-  ERROR 
+  ERROR
 }
 
 model User {
@@ -42,8 +44,9 @@ model User {
   profile       Profile?
   posts         Post[]
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
+
   @@map(name: "users")
 }
 
@@ -52,119 +55,120 @@ enum Permissions {
 }
 
 model Profile {
-  id                      String                   @id @default(cuid())
-  user                    User                     @relation(fields: [id], references: [email])
-  accountType             AccountType?
-  activationStatus        ProfileActivationStatus? @default(PENDING)
-  permission              Permissions?             @default(ADMIN)
-  address                 String?
-  postalCode              String?
-  country                 String?
-  city                    String?
-  province                String?
-  mobile                  String?
+  id               String                   @id @default(cuid())
+  user             User                     @relation(fields: [id], references: [email])
+  accountType      AccountType?
+  activationStatus ProfileActivationStatus? @default(PENDING)
+  permission       Permissions?             @default(ADMIN)
+  address          String?
+  postalCode       String?
+  country          String?
+  city             String?
+  province         String?
+  mobile           String?
 
-  modifiedAt              DateTime?                @default(now()) @map(name: "modified_at")
-  createdAt               DateTime?                @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
+
   @@map(name: "profiles")
 }
 
 model Tag {
-  id            String    @id @default(cuid())
-  name          String
+  id   String @id @default(cuid())
+  name String @unique
 
-  posts         TagsOnPosts[]
+  posts TagsOnPosts[]
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
+
   @@map(name: "tags")
 }
 
-
 model Post {
-  id                        String                @id @default(cuid())
-  title                     String
-  description               String?
-  content                   String
-  slug                      String
-  isPinned                  Boolean?              @default(false) @map(name: "is_pinned")
-  isBlocked                 Boolean?              @default(false) @map(name: "is_blocked")
-  isTrending                Boolean?              @default(false) @map(name: "is_trending")
-  isLocked                  Boolean?              @default(false) @map(name: "is_locked")
-  isPrivate                 Boolean?              @default(false) @map(name: "is_private")
-  isInternal                Boolean?              @default(false) @map(name: "is_internal")
-  allowCommentByPicture     Boolean?              @default(false) @map(name: "allow_comment_by_picture")
-  type                      PostStatus?           @default(DRAFT)
+  id                    String      @id @default(cuid())
+  title                 String
+  description           String?
+  content               String
+  slug                  String
+  isPinned              Boolean?    @default(false) @map(name: "is_pinned")
+  isBlocked             Boolean?    @default(false) @map(name: "is_blocked")
+  isTrending            Boolean?    @default(false) @map(name: "is_trending")
+  isLocked              Boolean?    @default(false) @map(name: "is_locked")
+  isPrivate             Boolean?    @default(false) @map(name: "is_private")
+  isInternal            Boolean?    @default(false) @map(name: "is_internal")
+  allowCommentByPicture Boolean?    @default(false) @map(name: "allow_comment_by_picture")
+  type                  PostStatus? @default(DRAFT)
 
-  author                    User                  @relation(fields: [authorId], references: [id])
-  authorId                  String
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
 
-  groups                    GroupsOnPosts[]
-  tags                      TagsOnPosts[]
-  categories                CategoriesOnPosts[]
+  groups     GroupsOnPosts[]
+  tags       TagsOnPosts[]
+  categories CategoriesOnPosts[]
 
-  comments                  Comment[]
+  comments Comment[]
 
-  modifiedAt                DateTime?              @default(now()) @map(name: "modified_at")
-  createdAt                 DateTime?              @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
+
   @@map(name: "posts")
 }
 
 model Group {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  slug          String
-  isPrivate     Boolean?  @default(false) @map(name: "is_private")
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  slug        String
+  isPrivate   Boolean? @default(false) @map(name: "is_private")
 
-  posts         GroupsOnPosts[]
+  posts GroupsOnPosts[]
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
 
   @@map(name: "groups")
 }
 
 model Category {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  color         String?
-  slug          String
-  isPrivate     Boolean?  @default(false) @map(name: "is_private")
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?
+  slug        String
+  isPrivate   Boolean? @default(false) @map(name: "is_private")
 
-  posts         CategoriesOnPosts[]
+  posts CategoriesOnPosts[]
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
 
   @@map(name: "categories")
 }
 
 model Comment {
-  id            String    @id @default(cuid())
-  content       String
-  isBlocked     Boolean?  @default(false) @map(name: "is_private")
+  id        String   @id @default(cuid())
+  content   String
+  isBlocked Boolean? @default(false) @map(name: "is_private")
 
-  post          Post      @relation(fields: [postId], references: [id])
-  postId        String
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
 
   @@map(name: "comments")
 }
 
-
 // category <n:n> post
 model CategoriesOnPosts {
-  post          Post      @relation(fields: [postId], references: [id])
-  postId        String
-  category      Category  @relation(fields: [categoryId], references: [id])
-  categoryId    String
+  post       Post     @relation(fields: [postId], references: [id])
+  postId     String
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
 
   @@id([postId, categoryId])
   @@map(name: "categories_posts_links")
@@ -172,13 +176,13 @@ model CategoriesOnPosts {
 
 // group <n:n> post
 model GroupsOnPosts {
-  post          Post      @relation(fields: [postId], references: [id])
-  postId        String
-  group         Group      @relation(fields: [groupId], references: [id])
-  groupId       String
+  post    Post   @relation(fields: [postId], references: [id])
+  postId  String
+  group   Group  @relation(fields: [groupId], references: [id])
+  groupId String
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
 
   @@id([postId, groupId])
   @@map(name: "groups_posts_links")
@@ -186,15 +190,14 @@ model GroupsOnPosts {
 
 // tag <n:n> post
 model TagsOnPosts {
-  post          Post      @relation(fields: [postId], references: [id])
-  postId        String
-  tag           Tag       @relation(fields: [tagId], references: [id])
-  tagId         String
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  String
 
-  modifiedAt    DateTime?  @default(now()) @map(name: "modified_at")
-  createdAt     DateTime?  @default(now()) @map(name: "created_at")
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
 
   @@id([postId, tagId])
   @@map(name: "tags_posts_links")
 }
-

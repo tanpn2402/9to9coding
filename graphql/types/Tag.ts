@@ -41,8 +41,6 @@ builder.queryField('tags', t =>
 const CreateTagInput = builder.inputType('CreateTagInput', {
   fields: t => ({
     name: t.string({ required: true }),
-    surname: t.string({ required: true }),
-    email: t.string({ required: true })
   })
 });
 

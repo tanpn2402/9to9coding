@@ -125,7 +125,7 @@ const Header = () => {
             className='h-full flex items-center px-2 py-2 text-md mr-2 md:mr-8 link'>
             chủ đề
           </Link>
-          <Link href='/p/new' className='h-full flex items-center px-2 py-2 text-md link'>
+          <Link href='/new-post' className='h-full flex items-center px-2 py-2 text-md link'>
             viết bài
           </Link>
         </nav>
