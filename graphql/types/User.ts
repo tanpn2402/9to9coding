@@ -1,5 +1,23 @@
 import { builder } from '../builder';
 
+builder.prismaObject('Profile', {
+  fields: t => ({
+    id: t.exposeID('id'),
+    user: t.relation('user', {}),
+    bio: t.expose('bio', { nullable: true, type: 'String' }),
+    picture: t.expose('picture', { nullable: true, type: 'String' }),
+    address: t.expose('address', { nullable: true, type: 'String' }),
+    postalCode: t.expose('postalCode', { nullable: true, type: 'String' }),
+    country: t.expose('country', { nullable: true, type: 'String' }),
+    city: t.expose('city', { nullable: true, type: 'String' }),
+    province: t.expose('province', { nullable: true, type: 'String' }),
+    mobile: t.expose('mobile', { nullable: true, type: 'String' }),
+
+    createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
+    modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
+  })
+});
+
 builder.prismaObject('User', {
   fields: t => ({
     id: t.exposeID('id'),
@@ -12,6 +30,7 @@ builder.prismaObject('User', {
       cursor: 'id',
       totalCount: true
     }),
+    profile: t.relation('profile', {}),
 
     createdAt: t.expose('createdAt', { type: 'DateTime', nullable: true }),
     modifiedAt: t.expose('modifiedAt', { type: 'DateTime', nullable: true })
@@ -31,7 +50,8 @@ const CreateUserInput = builder.inputType('CreateUser', {
   fields: t => ({
     name: t.string({ required: true }),
     surname: t.string({ required: true }),
-    email: t.string({ required: true })
+    email: t.string({ required: true }),
+    username: t.string({ required: true })
   })
 });
 
@@ -46,7 +66,8 @@ builder.mutationField('createUser', t =>
         data: {
           name: input.name,
           surname: input.surname,
-          email: input.email
+          email: input.email,
+          username: input.username
         }
       });
 

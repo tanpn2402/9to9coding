@@ -1,3 +1,4 @@
+import { map } from 'lodash';
 import { builder } from '../builder';
 import generateSlug from 'slug';
 
@@ -65,7 +66,7 @@ builder.mutationField('createPost', t =>
           content,
           authorId: author.id,
           tags: {
-            create: (tags ?? []).map(tag => ({
+            create: map(tags, tag => ({
               tag: {
                 connectOrCreate: {
                   where: {
@@ -80,7 +81,7 @@ builder.mutationField('createPost', t =>
             }))
           },
           categories: {
-            create: (categories ?? []).map(category => ({
+            create: map(categories, category => ({
               category: {
                 connectOrCreate: {
                   where: {
@@ -90,6 +91,98 @@ builder.mutationField('createPost', t =>
                     slug: generateSlug(category),
                     id: category,
                     name: category
+                  }
+                }
+              }
+            }))
+          }
+        }
+      });
+    }
+  })
+);
+
+builder.mutationField('updatePost', t =>
+  t.prismaField({
+    type: 'Post',
+    args: {
+      id: t.arg.string({ required: true }),
+      title: t.arg.string({ required: true }),
+      description: t.arg.string({ required: false }),
+      content: t.arg.string({ required: true }),
+      categories: t.arg.stringList({ required: false }),
+      tags: t.arg.stringList({ required: false })
+    },
+    resolve: async (query, _parent, args, ctx) => {
+      const { id, title, description, content, categories, tags } = args;
+
+      const author = (await ctx).user;
+
+      if (!author) {
+        throw new Error('You have to be logged in to perform this action');
+      }
+
+      prisma.tagsOnPosts.findMany({
+        select: {},
+        where: {
+          tagId: {
+            in: tags ?? []
+          }
+        }
+      });
+
+      return prisma.post.update({
+        ...query,
+        where: {
+          id
+        },
+        data: {
+          title,
+          description,
+          content,
+          authorId: author.id,
+          tags: {
+            connectOrCreate: map(tags, tag => ({
+              where: {
+                postId_tagId: {
+                  postId: id,
+                  tagId: tag
+                }
+              },
+              create: {
+                tag: {
+                  connectOrCreate: {
+                    where: {
+                      id: tag
+                    },
+                    create: {
+                      id: tag,
+                      name: tag
+                    }
+                  }
+                }
+              }
+            }))
+          },
+          categories: {
+            connectOrCreate: map(categories, category => ({
+              where: {
+                postId_categoryId: {
+                  postId: id,
+                  categoryId: category
+                }
+              },
+              create: {
+                category: {
+                  connectOrCreate: {
+                    where: {
+                      id: category
+                    },
+                    create: {
+                      slug: generateSlug(category),
+                      id: category,
+                      name: category
+                    }
                   }
                 }
               }

@@ -1,19 +1,30 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import Link from 'next/link';
+import { Menu, Button, Avatar, rem, Group } from '@mantine/core';
+import {
+  IconSettings,
+  IconMessageCircle,
+  IconChevronDown,
+  IconLogout,
+  IconUser
+} from '@tabler/icons-react';
 import { useUser } from '@auth0/nextjs-auth0/client';
-import { Menu, Transition } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
+
 import { useMantineTheme, useMantineColorScheme, ActionIcon } from '@mantine/core';
 import { IconSun, IconMoonStars } from '@tabler/icons-react';
+import { classNames } from '@/utils';
 
-const Header = () => {
+type Props = {
+  fixed?: boolean;
+};
+
+const Header: React.FC<Props> = ({ fixed = true }) => {
   const theme = useMantineTheme();
   const { user, error, isLoading } = useUser();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const isDarkEnabled = colorScheme === 'dark';
 
   let rightMenu;
-
   if (error) {
     rightMenu = <div>error</div>;
   }
@@ -25,63 +36,26 @@ const Header = () => {
   else if (user) {
     rightMenu = (
       <div className='flex items-center space-x-5'>
-        <Menu as='div' className='relative inline-block text-left'>
-          <div>
-            <Menu.Button className='flex items-center  text-current hover:text-gray-500'>
-              <img
-                alt='profile'
-                className='rounded-full w-8 h-8'
-                src={user.picture ? user.picture : ''}
-              />
-              <ChevronDownIcon className='ml-2 -mr-1 h-5 w-5' aria-hidden='true' />
-            </Menu.Button>
-          </div>
-          <Transition
-            as={Fragment}
-            enter='transition ease-out duration-100'
-            enterFrom='transform opacity-0 scale-95'
-            enterTo='transform opacity-100 scale-100'
-            leave='transition ease-in duration-75'
-            leaveFrom='transform opacity-100 scale-100'
-            leaveTo='transform opacity-0 scale-95'>
-            <Menu.Items className='bg-white dark:bg-slate-500 text-main absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
-              <div className='px-1 py-1 '>
-                <Menu.Item>
-                  {({ active }) => (
-                    <Link
-                      href='/profile'
-                      className={`${
-                        active ? 'bg-gray-500 text-white' : ''
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
-                      my posts
-                    </Link>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <Link
-                      href='/profile/post'
-                      className={`${
-                        active ? 'bg-gray-500 text-white' : ''
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
-                      my posts
-                    </Link>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <Link
-                      href='/api/auth/logout'
-                      className={`${
-                        active ? 'bg-red-500 text-white' : ''
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
-                      logout
-                    </Link>
-                  )}
-                </Menu.Item>
-              </div>
-            </Menu.Items>
-          </Transition>
+        <Menu shadow='md' width={200} position='bottom-end'>
+          <Menu.Target>
+            <Button variant='light' px={rem(4)} color='gray'>
+              <Group>
+                <Avatar color='cyan' radius='xl' size={rem(28)}>
+                  {user.nickname}
+                </Avatar>
+                <IconChevronDown size={rem(16)} />
+              </Group>
+            </Button>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Item icon={<IconUser size={14} />}>Profile</Menu.Item>
+            <Menu.Item icon={<IconSettings size={14} />}>Settings</Menu.Item>
+            <Menu.Item icon={<IconMessageCircle size={14} />}>Messages</Menu.Item>
+            <Menu.Item color='red' icon={<IconLogout size={14} />}>
+              Logout
+            </Menu.Item>
+          </Menu.Dropdown>
         </Menu>
       </div>
     );
@@ -89,17 +63,22 @@ const Header = () => {
   // If session or token expired
   else {
     rightMenu = (
-      <Link
-        href='/api/auth/login'
-        className='inline-flex items-center border-0 py-1 px-3 focus:outline-none rounded text-base'>
-        login
-      </Link>
+      <Group>
+        <Button variant='light' px={rem(4)} color='gray'>
+          <IconUser size={rem(16)} />
+          <Link
+            href='/api/auth/login'
+            className='inline-flex items-center border-0 py-1 px-3 focus:outline-none rounded text-base'>
+            login
+          </Link>
+        </Button>
+      </Group>
     );
   }
 
   return (
     <header
-      className='text-main body-font fixed w-full z-50'
+      className={classNames('text-main body-font w-full z-50', fixed ? 'fixed' : '')}
       style={{
         backgroundColor: isDarkEnabled ? theme.colors.dark[8] : theme.colors.gray[1]
       }}>
@@ -135,8 +114,9 @@ const Header = () => {
             variant='outline'
             color={isDarkEnabled ? 'yellow' : 'blue'}
             onClick={() => toggleColorScheme(isDarkEnabled ? 'light' : 'dark')}
-            title='Toggle color scheme'>
-            {isDarkEnabled ? <IconSun size='1.1rem' /> : <IconMoonStars size='1.1rem' />}
+            title='Toggle color scheme'
+            mr={rem(16)}>
+            {isDarkEnabled ? <IconSun size={rem(16)} /> : <IconMoonStars size={rem(16)} />}
           </ActionIcon>
           {rightMenu}
         </nav>

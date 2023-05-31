@@ -19,6 +19,7 @@ import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import {
   Affix,
   Button,
+  Card,
   Collapse,
   Group,
   Input,
@@ -27,15 +28,18 @@ import {
   Text,
   rem
 } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import { InsertPhotoControl } from '@/components/Editor/InsertPhotoControl';
 import { UploadPhotoControl } from '@/components/Editor/UploadPhotoControl';
 import { TableControls } from '@/components/Editor/TableControls';
-import { gql, useQuery, useMutation } from '@apollo/client';
+import { gql, useQuery, useMutation, FetchResult } from '@apollo/client';
 import { Category, Tag } from '@prisma/client';
 import { UseFormReturnType, useForm } from '@mantine/form';
 import { useModal } from '@/utils/hooks/useModal';
+import { PostTypes } from '@/utils/types/PostTypes';
+import { isNil, map } from 'lodash';
+import Sticky from 'react-stickynode';
 
 // register languages that your are planning to use
 lowlight.registerLanguage('ts', tsLanguageSyntax);
@@ -74,12 +78,39 @@ const CategoryAndTagQuery = gql`
 
 const NewPostMutation = gql`
   mutation NewPost($title: String!, $content: String!, $categories: [String!], $tags: [String!]) {
-    createPost(content: $content, title: $title, categories: $categories, tags: $tags) {
+    result: createPost(content: $content, title: $title, categories: $categories, tags: $tags) {
       id
       slug
     }
   }
 `;
+
+const UpdatePostMutation = gql`
+  mutation UpdatePost(
+    $id: String!
+    $title: String!
+    $content: String!
+    $categories: [String!]
+    $tags: [String!]
+  ) {
+    result: updatePost(
+      id: $id
+      content: $content
+      title: $title
+      categories: $categories
+      tags: $tags
+    ) {
+      id
+      slug
+    }
+  }
+`;
+
+type MutationResult = {
+  result: {
+    id?: string;
+  };
+};
 
 type TCategoryNode = {
   node: Category & {
@@ -146,6 +177,10 @@ const useOptions = (form: UseFormReturnType<NewPostForm>) => {
   };
 };
 
+type PageProps = {
+  post?: PostTypes;
+};
+
 type NewPostForm = {
   title: string;
   categories?: string[];
@@ -153,8 +188,13 @@ type NewPostForm = {
   content?: string;
 };
 
-export default function Demo() {
-  const [createPost, { loading: isSubmitting }] = useMutation<{ id: string }>(NewPostMutation);
+const PostEditorPage: React.FC<PageProps> = ({ post }) => {
+  const isCreateNewMode = useMemo(() => isNil(post), [post]);
+  const [opened, { toggle }] = useDisclosure(isCreateNewMode ? false : true);
+  const [createPost, { loading: isSubmittingCreate }] =
+    useMutation<MutationResult>(NewPostMutation);
+  const [updatePost, { loading: isSubmittingUpdate }] =
+    useMutation<MutationResult>(UpdatePostMutation);
 
   const modalWarningEmptyCategory = useModal({
     title: 'cảnh báo',
@@ -167,7 +207,7 @@ export default function Demo() {
               khoan để thêm
             </Button>
             <Button
-              variant='outline'
+              variant='light'
               onClick={() => {
                 form.onSubmit(hanleSubmit({ ignoreEmptyCategory: true }))();
                 triggerClose();
@@ -187,8 +227,24 @@ export default function Demo() {
         <div>
           <Text fz='md'>hừmmm có vẻ như là nôi dung hơi ít</Text>
           <Group position='center' mt='xl'>
-            <Button variant='outline' onClick={triggerClose}>
+            <Button variant='light' onClick={triggerClose}>
               okay để viết thêm
+            </Button>
+          </Group>
+        </div>
+      );
+    }
+  });
+
+  const modalNotifySuccess = useModal({
+    title: 'thông báo',
+    childrenFn({ triggerClose }) {
+      return (
+        <div>
+          <Text fz='md'>thành công rồi nha</Text>
+          <Group position='center' mt='xl'>
+            <Button variant='light' onClick={triggerClose}>
+              đã hiểu
             </Button>
           </Group>
         </div>
@@ -198,7 +254,9 @@ export default function Demo() {
 
   const form = useForm<NewPostForm>({
     initialValues: {
-      title: 'Tiêu đề'
+      title: post?.title ?? 'Tiêu đề',
+      categories: map(post?.categories, el => el.categoryId),
+      tags: map(post?.tags, el => el.tagId)
     },
     validate: {
       title: value => (String(value).length > 6 ? null : 'Hãy nhập một tiêu đề thật ý nghĩa')
@@ -230,9 +288,8 @@ export default function Demo() {
         lowlight
       })
     ],
-    content: `<p>Bắt đầu viết những thứ hay ho...</p><p></p>`
+    content: post?.content ?? `<p>Bắt đầu viết những thứ hay ho...</p><p></p>`
   });
-  const [opened, { toggle }] = useDisclosure(false);
   const {
     loading,
     tagOptions,
@@ -253,17 +310,31 @@ export default function Demo() {
       } else if ((editor?.getText().length ?? 0) < 69) {
         modalWarningEmptyContent.triggerOpen();
       } else {
-        let resp = await createPost({
-          variables: {
-            title: title,
-            categories: categories,
-            tags: tags,
-            content: editor?.getHTML()
-          }
-        });
+        let resp: FetchResult<MutationResult>;
+        if (isCreateNewMode) {
+          resp = await createPost({
+            variables: {
+              title: title,
+              categories: categories,
+              tags: tags,
+              content: editor?.getHTML()
+            }
+          });
+        } else {
+          resp = await updatePost({
+            variables: {
+              id: post?.id,
+              title: title,
+              categories: categories,
+              tags: tags,
+              content: editor?.getHTML()
+            }
+          });
+        }
 
-        if (resp.data?.id) {
+        if (resp.data?.result.id) {
           // Success
+          modalNotifySuccess.triggerOpen();
         } else if (resp.errors) {
           // error
         }
@@ -271,17 +342,18 @@ export default function Demo() {
     };
 
   return (
-    <main className='container mx-auto min-h-screen pt-4 pb-32 text-main'>
-      <form id='newPostForm' onSubmit={form.onSubmit(hanleSubmit({ ignoreEmptyCategory: false }))}>
+    <main className='container mx-auto max-w-[1024px] min-h-screen pt-4 pb-32 text-main'>
+      <form onSubmit={form.onSubmit(hanleSubmit({ ignoreEmptyCategory: false }))}>
         <Input
           multiline
           size='xl'
           placeholder='Tiêu đề'
-          mb={rem(4)}
+          mt={rem(32)}
+          mb={rem(42)}
           fs={rem(32)}
           variant='unstyled'
           {...form.getInputProps('title')}
-          disabled={isSubmitting}
+          disabled={isSubmittingCreate || isSubmittingUpdate}
           styles={_theme => ({
             input: {
               fontSize: rem(32)
@@ -289,130 +361,148 @@ export default function Demo() {
           })}
         />
 
-        <Group mb={5}>
-          <Button
-            variant='subtle'
-            size='xs'
-            px={rem(2)}
-            mx={-rem(2)}
-            rightIcon={
-              opened ? <IconChevronUp size={rem(14)} /> : <IconChevronDown size={rem(14)} />
-            }
-            onClick={toggle}>
-            Thêm thông tin
-          </Button>
-        </Group>
+        <div className='flex'>
+          <RichTextEditor editor={editor} className='max-w-[768px]'>
+            <RichTextEditor.Toolbar sticky stickyOffset={0}>
+              <RichTextEditor.ControlsGroup>
+                <RichTextEditor.H1 sx={ButtonStyles} />
+                <RichTextEditor.H2 sx={ButtonStyles} />
+                <RichTextEditor.H3 sx={ButtonStyles} />
+                <RichTextEditor.H4 sx={ButtonStyles} />
+              </RichTextEditor.ControlsGroup>
 
-        <Collapse in={opened}>
-          <MultiSelect
-            mb={rem(16)}
-            label='Chủ đề'
-            data={categoryOptions ?? []}
-            size='xs'
-            placeholder='Chọn chủ đề'
-            searchable
-            creatable
-            disabled={loading || isSubmitting}
-            icon={loading ? <Loader size={rem(16)} /> : undefined}
-            getCreateLabel={query => `+ ${query}`}
-            value={categorySelected}
-            onChange={setCategorySelected}
-            onCreate={query => {
-              const item = { value: query, label: query };
-              setCategorySelected([...(categorySelected ?? []), query]);
-              setCategoryOptions(current => [...current, item]);
-              return item;
-            }}
-          />
-          <MultiSelect
-            mb={rem(16)}
-            label='Tags'
-            data={tagOptions ?? []}
-            size='xs'
-            placeholder='Chọn thẻ tags'
-            searchable
-            creatable
-            disabled={loading || isSubmitting}
-            icon={loading ? <Loader size={rem(16)} /> : undefined}
-            getCreateLabel={query => `+ ${query}`}
-            value={tagSelected}
-            onChange={setTagSelected}
-            onCreate={query => {
-              const item = { value: query, label: query };
-              setTagSelected([...(tagSelected ?? []), query]);
-              setTagOptions(current => [...current, item]);
-              return item;
-            }}
-          />
-        </Collapse>
+              <RichTextEditor.ControlsGroup>
+                <RichTextEditor.Bold sx={ButtonStyles} />
+                <RichTextEditor.Italic sx={ButtonStyles} />
+                <RichTextEditor.Underline sx={ButtonStyles} />
+                <RichTextEditor.Strikethrough sx={ButtonStyles} />
+                <RichTextEditor.ClearFormatting sx={ButtonStyles} />
+                <RichTextEditor.Highlight sx={ButtonStyles} />
+                <RichTextEditor.Code sx={ButtonStyles} />
+              </RichTextEditor.ControlsGroup>
 
-        <RichTextEditor editor={editor}>
-          <RichTextEditor.Toolbar sticky stickyOffset={0}>
-            <RichTextEditor.ControlsGroup>
-              <RichTextEditor.H1 sx={ButtonStyles} />
-              <RichTextEditor.H2 sx={ButtonStyles} />
-              <RichTextEditor.H3 sx={ButtonStyles} />
-              <RichTextEditor.H4 sx={ButtonStyles} />
-            </RichTextEditor.ControlsGroup>
+              <RichTextEditor.ControlsGroup>
+                <RichTextEditor.Blockquote sx={ButtonStyles} />
+                <RichTextEditor.Hr sx={ButtonStyles} />
+                <RichTextEditor.BulletList sx={ButtonStyles} />
+                <RichTextEditor.OrderedList sx={ButtonStyles} />
+              </RichTextEditor.ControlsGroup>
 
-            <RichTextEditor.ControlsGroup>
-              <RichTextEditor.Bold sx={ButtonStyles} />
-              <RichTextEditor.Italic sx={ButtonStyles} />
-              <RichTextEditor.Underline sx={ButtonStyles} />
-              <RichTextEditor.Strikethrough sx={ButtonStyles} />
-              <RichTextEditor.ClearFormatting sx={ButtonStyles} />
-              <RichTextEditor.Highlight sx={ButtonStyles} />
-              <RichTextEditor.Code sx={ButtonStyles} />
-            </RichTextEditor.ControlsGroup>
+              <RichTextEditor.ControlsGroup>
+                <RichTextEditor.CodeBlock sx={ButtonStyles} />
+                <InsertPhotoControl />
+                <UploadPhotoControl />
+              </RichTextEditor.ControlsGroup>
 
-            <RichTextEditor.ControlsGroup>
-              <RichTextEditor.Blockquote sx={ButtonStyles} />
-              <RichTextEditor.Hr sx={ButtonStyles} />
-              <RichTextEditor.BulletList sx={ButtonStyles} />
-              <RichTextEditor.OrderedList sx={ButtonStyles} />
-            </RichTextEditor.ControlsGroup>
+              <TableControls
+                isDeleteColumnEnable={editor?.can().deleteColumn()}
+                isInsertColumnEnable={editor?.can().addColumnAfter()}
+                isDeleteRowEnable={editor?.can().deleteRow()}
+                isInsertRowEnable={editor?.can().addRowAfter()}
+                isMergeOrSplitEnable={editor?.can().mergeOrSplit()}
+              />
 
-            <RichTextEditor.ControlsGroup>
-              <RichTextEditor.CodeBlock sx={ButtonStyles} />
-              <InsertPhotoControl />
-              <UploadPhotoControl />
-            </RichTextEditor.ControlsGroup>
+              <RichTextEditor.ControlsGroup>
+                <RichTextEditor.Link sx={ButtonStyles} />
+                <RichTextEditor.Unlink sx={ButtonStyles} />
+              </RichTextEditor.ControlsGroup>
 
-            <TableControls
-              isDeleteColumnEnable={editor?.can().deleteColumn()}
-              isInsertColumnEnable={editor?.can().addColumnAfter()}
-              isDeleteRowEnable={editor?.can().deleteRow()}
-              isInsertRowEnable={editor?.can().addRowAfter()}
-              isMergeOrSplitEnable={editor?.can().mergeOrSplit()}
-            />
+              <RichTextEditor.ControlsGroup>
+                <RichTextEditor.AlignLeft sx={ButtonStyles} />
+                <RichTextEditor.AlignCenter sx={ButtonStyles} />
+                <RichTextEditor.AlignJustify sx={ButtonStyles} />
+                <RichTextEditor.AlignRight sx={ButtonStyles} />
+              </RichTextEditor.ControlsGroup>
+            </RichTextEditor.Toolbar>
 
-            <RichTextEditor.ControlsGroup>
-              <RichTextEditor.Link sx={ButtonStyles} />
-              <RichTextEditor.Unlink sx={ButtonStyles} />
-            </RichTextEditor.ControlsGroup>
+            <RichTextEditor.Content />
+          </RichTextEditor>
+          <div className='pl-4 w-[256px]'>
+            <Sticky enabled={true} top={50}>
+              <Card shadow='xs' padding='lg' radius='xs'>
+                <Group mb={5}>
+                  <Button
+                    variant='subtle'
+                    size='xs'
+                    px={rem(2)}
+                    mx={-rem(2)}
+                    rightIcon={
+                      opened ? <IconChevronUp size={rem(14)} /> : <IconChevronDown size={rem(14)} />
+                    }
+                    onClick={toggle}>
+                    Thêm thông tin
+                  </Button>
+                </Group>
 
-            <RichTextEditor.ControlsGroup>
-              <RichTextEditor.AlignLeft sx={ButtonStyles} />
-              <RichTextEditor.AlignCenter sx={ButtonStyles} />
-              <RichTextEditor.AlignJustify sx={ButtonStyles} />
-              <RichTextEditor.AlignRight sx={ButtonStyles} />
-            </RichTextEditor.ControlsGroup>
-          </RichTextEditor.Toolbar>
+                <Collapse in={opened}>
+                  <MultiSelect
+                    mb={rem(16)}
+                    label='Chủ đề'
+                    data={categoryOptions ?? []}
+                    size='sm'
+                    placeholder='Chọn chủ đề'
+                    searchable
+                    creatable
+                    disabled={loading || isSubmittingCreate || isSubmittingUpdate}
+                    icon={loading ? <Loader size={rem(16)} /> : undefined}
+                    getCreateLabel={query => `+ ${query}`}
+                    value={categorySelected}
+                    onChange={setCategorySelected}
+                    onCreate={query => {
+                      const item = { value: query, label: query };
+                      setCategorySelected([...(categorySelected ?? []), query]);
+                      setCategoryOptions(current => [...current, item]);
+                      return item;
+                    }}
+                  />
+                  <MultiSelect
+                    mb={rem(16)}
+                    label='Tags'
+                    data={tagOptions ?? []}
+                    size='sm'
+                    placeholder='Chọn thẻ tags'
+                    searchable
+                    creatable
+                    disabled={loading || isSubmittingCreate || isSubmittingUpdate}
+                    icon={loading ? <Loader size={rem(16)} /> : undefined}
+                    getCreateLabel={query => `+ ${query}`}
+                    value={tagSelected}
+                    onChange={setTagSelected}
+                    onCreate={query => {
+                      const item = { value: query, label: query };
+                      setTagSelected([...(tagSelected ?? []), query]);
+                      setTagOptions(current => [...current, item]);
+                      return item;
+                    }}
+                  />
+                </Collapse>
 
-          <RichTextEditor.Content />
-        </RichTextEditor>
-
-        <Affix position={{ bottom: 0, left: 0 }} w='100%'>
-          <div className='container mx-auto pt-4 pb-16 flex justify-end'>
-            <Button form='newPostForm' type='submit' disabled={isSubmitting}>
-              Đăng bài
-            </Button>
+                <Button
+                  mt={rem(48)}
+                  fullWidth
+                  variant='filled'
+                  type='submit'
+                  loading={isSubmittingCreate || isSubmittingUpdate}
+                  disabled={isSubmittingCreate || isSubmittingUpdate}>
+                  {isCreateNewMode ? 'Đăng bài' : 'Cập nhật'}
+                </Button>
+              </Card>
+            </Sticky>
           </div>
-        </Affix>
+        </div>
+
+        {/* <Affix position={{ bottom: 0, left: 0 }} w='100%'>
+          <div className='container mx-auto pt-4 pb-16 flex justify-end'>
+            
+          </div>
+        </Affix> */}
       </form>
       {/* Modal */}
       {modalWarningEmptyCategory.modal}
       {modalWarningEmptyContent.modal}
+      {modalNotifySuccess.modal}
     </main>
   );
-}
+};
+
+export default PostEditorPage;

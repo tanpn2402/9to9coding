@@ -1,13 +1,14 @@
 import Head from 'next/head';
 import { gql, useQuery } from '@apollo/client';
-import type { Category, Post, Tag, User } from '@prisma/client';
+import type { Category, Post, Profile, Tag, User } from '@prisma/client';
 import Header from '@/components/Layout/Header';
 import { classNames } from '@/utils';
-import { format, formatDistance } from 'date-fns';
+import { formatDistance } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { BASE_POST_URL } from '@/utils/config';
-import { useMantineColorScheme, useMantineTheme } from '@mantine/core';
+import { Avatar, Badge, Flex, rem, useMantineTheme } from '@mantine/core';
+import { map, toLower } from 'lodash';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int, $after: ID) {
@@ -29,6 +30,10 @@ const AllPostsQuery = gql`
             id
             name
             email
+            profile {
+              bio
+              picture
+            }
           }
           categories {
             category {
@@ -54,7 +59,9 @@ type TNode = {
   node: Post & {
     categories: [{ category: Category }];
     tags: [{ tag: Tag }];
-    author: User;
+    author: User & {
+      profile: Profile;
+    };
   };
 };
 
@@ -111,38 +118,43 @@ export default function Home() {
             }}>
             <div className='col-span-8'>
               <div className='flex items-center w-full'>
-                <div className='mr-2 rounded-full w-10 h-10 flex-center bg-green-500'>
-                  {post.author.name.charAt(0)}
-                </div>
+                <Avatar src={post.author.profile.picture} radius='xl' mr={rem(8)}>
+                  {post.author.name}
+                </Avatar>
                 <div className='flex-1'>
                   <div className='font-normal mb-1 text-base'>
                     <Link href={`${BASE_POST_URL}/${post.slug}`} className='link-sm'>
                       {post.title}
                     </Link>
                   </div>
-                  <div className='flex items-center'>
-                    {post.tags.map(({ tag }) => (
-                      <div
-                        key={`Tag#${tag.id}`}
-                        className='rounded-sm px-2 bg-gray-200 bg-gray-400 mr-2 text-xs text-white'>
-                        {tag.name}
-                      </div>
+                  <Flex wrap='wrap'>
+                    {map(post.tags, ({ tag }) => (
+                      <Link key={tag.id} href={`/tag/${tag.name}`}>
+                        <Badge m={rem(2)} size='sm' radius='sm' sx={{ textTransform: 'lowercase' }}>
+                          {toLower(tag.name)}
+                        </Badge>
+                      </Link>
                     ))}
-                  </div>
+                  </Flex>
                 </div>
               </div>
             </div>
             <div className='col-span-2'>
-              {post.categories.map(({ category }) => (
-                <div
-                  key={`Category#${category.id}`}
-                  className={classNames(
-                    'rounded-sm px-2 py-2 bg-gray-200 mr-2 text-xs w-fit text-white'
-                  )}
-                  style={{ backgroundColor: category.color! }}>
-                  {category.name}
-                </div>
-              ))}
+              <Flex wrap='wrap'>
+                {map(post.categories, ({ category }) => (
+                  <Link key={category.id} href={`/topic/${category.slug}`}>
+                    <Badge
+                      m={rem(2)}
+                      size='lg'
+                      radius='sm'
+                      px={rem(4)}
+                      py={rem(2)}
+                      sx={{ textTransform: 'lowercase' }}>
+                      {toLower(category.name)}
+                    </Badge>
+                  </Link>
+                ))}
+              </Flex>
             </div>
             <div className='col-span-2'>
               {post.createdAt
