@@ -1,6 +1,7 @@
 import { map } from 'lodash';
-import { builder } from '../builder';
 import generateSlug from 'slug';
+import prisma from '@/lib/prisma';
+import { builder } from '../builder';
 
 builder.prismaObject('Post', {
   fields: t => ({
