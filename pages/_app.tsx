@@ -45,6 +45,6 @@ App.getInitialProps = async (appContext: AppContext) => {
   const appProps = await NextApp.getInitialProps(appContext);
   return {
     ...appProps,
-    colorScheme: getCookie(COOKIE_COLOR_SCHEMA, appContext.ctx) || 'light'
+    colorScheme: getCookie(COOKIE_COLOR_SCHEMA, appContext.ctx) || 'dark'
   };
 };

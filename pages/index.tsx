@@ -7,8 +7,10 @@ import { formatDistance } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { BASE_POST_URL } from '@/utils/config';
-import { Avatar, Badge, Flex, rem, useMantineTheme } from '@mantine/core';
+import { Avatar, Badge, Flex, Group, rem, useMantineTheme } from '@mantine/core';
 import { map, toLower } from 'lodash';
+import { LeftSideBar } from '@/components/Layout/LeftSidebar';
+import { TweetCard } from '@/components/Layout/TweetCard';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int, $after: ID) {
@@ -190,6 +192,16 @@ export default function Home() {
       </>
     );
   }
+
+  main = (
+    <Flex align='start'>
+      <LeftSideBar />
+      <Group className='flex-1' px='xl' display='flex'>
+        <TweetCard />
+      </Group>
+      <LeftSideBar />
+    </Flex>
+  );
 
   return (
     <>
