@@ -1,22 +1,91 @@
-import { Avatar, Badge, Box, NavLink, Space, Text } from '@mantine/core';
+import { gql, useQuery } from '@apollo/client';
 import {
-  IconHome2,
-  IconGauge,
-  IconChevronRight,
-  IconActivity,
-  IconCircleOff,
-  IconTag,
-  IconHash
-} from '@tabler/icons-react';
+  Avatar,
+  Badge,
+  Box,
+  ColorSwatch,
+  Flex,
+  NavLink,
+  Skeleton,
+  Space,
+  Text
+} from '@mantine/core';
+import { Category, Tag, User } from '@prisma/client';
+import { IconHome2, IconGauge, IconCircleOff, IconHash } from '@tabler/icons-react';
+import { SkeletonLoading } from '../runtime/SkeletonLoading';
+
+const LeftSideBarGeneralDataQuery = gql`
+  query {
+    categories {
+      edges {
+        category: node {
+          id
+          name
+          slug
+          color
+          posts {
+            totalCount
+          }
+        }
+      }
+    }
+    tags {
+      edges {
+        tag: node {
+          id
+          name
+          posts {
+            totalCount
+          }
+        }
+      }
+    }
+    users {
+      edges {
+        user: node {
+          id
+          name
+          email
+          posts {
+            totalCount
+          }
+        }
+      }
+    }
+  }
+`;
+
+type WithPostTotalCount<T> = T & {
+  posts: {
+    totalCount: number;
+  };
+};
+
+type TData = {
+  categories: {
+    edges: Array<{ category: WithPostTotalCount<Category> }>;
+  };
+  tags: {
+    edges: Array<{ tag: WithPostTotalCount<Tag> }>;
+  };
+  users: {
+    edges: Array<{ user: WithPostTotalCount<User> }>;
+  };
+};
 
 const NavGroup = () => (
   <>
     <Text weight={500} size='lg'>
       Gì đó
     </Text>
-    <NavLink label='Trang chủ' icon={<IconHome2 size='1.5rem' stroke={1} />} />
-    <NavLink label='Trang gì đó' icon={<IconGauge size='1.5rem' stroke={1} />} />
-    <NavLink label='Trang bị disabled' icon={<IconCircleOff size='1.5rem' stroke={1} />} disabled />
+    <NavLink label='Trang này về nhà' icon={<IconHome2 size='1.5rem' stroke={1} />} />
+    <NavLink label='Trang nói về chủ đề' icon={<IconGauge size='1.5rem' stroke={1} />} />
+    <NavLink
+      label='Trang này bị disabled'
+      description='Chỉ có VIP mới vào được'
+      icon={<IconCircleOff size='1.5rem' stroke={1} />}
+      disabled
+    />
     <NavLink
       label='Trang này có chỉ mục'
       description='Thông tin thêm nè'
@@ -29,112 +98,132 @@ const NavGroup = () => (
   </>
 );
 
-const TagGroup = () => (
+const TopCategories: React.FC<{ categories: TData['categories']['edges']; loading: boolean }> = ({
+  categories,
+  loading
+}) => (
   <>
     <Text weight={500} size='lg'>
-      Top tags
+      Top categories
     </Text>
-    <NavLink
-      label='Tag 1'
-      icon={<IconHash size='1.5rem' stroke={1} />}
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          32
-        </Badge>
+    <SkeletonLoading
+      isLoading={loading}
+      loadingContent={
+        <Flex direction='column' gap='xs'>
+          <Skeleton width={180} height={28} />
+          <Skeleton width={180} height={28} />
+        </Flex>
       }
-      w={260}
-    />
-    <NavLink
-      label='Tag 2'
-      icon={<IconHash size='1.5rem' stroke={1} />}
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          12
-        </Badge>
+      loadedContent={
+        <>
+          {categories.map(({ category }) => (
+            <NavLink
+              key={category.id}
+              label={category.name}
+              icon={<ColorSwatch w={20} h={20} color={category.color ?? 'gray'} />}
+              rightSection={
+                <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
+                  {category.posts.totalCount}
+                </Badge>
+              }
+              w={260}
+            />
+          ))}
+        </>
       }
-      w={260}
-    />
-    <NavLink
-      label='Tag 3'
-      icon={<IconHash size='1.5rem' stroke={1} />}
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          16
-        </Badge>
-      }
-      w={260}
-    />
-    <NavLink
-      label='Tag 4'
-      icon={<IconHash size='1.5rem' stroke={1} />}
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          3
-        </Badge>
-      }
-      w={260}
     />
   </>
 );
 
-const UserGroup = () => (
+const TopTags: React.FC<{ tags: TData['tags']['edges']; loading: boolean }> = ({
+  tags,
+  loading
+}) => (
+  <>
+    <Text weight={500} size='lg'>
+      Top tags
+    </Text>
+    <SkeletonLoading
+      isLoading={loading}
+      loadingContent={
+        <Flex direction='column' gap='xs'>
+          <Skeleton width={180} height={28} />
+          <Skeleton width={180} height={28} />
+        </Flex>
+      }
+      loadedContent={
+        <>
+          {tags.map(({ tag }) => (
+            <NavLink
+              key={tag.id}
+              label={tag.name}
+              icon={<IconHash size='1.5rem' stroke={1} />}
+              rightSection={
+                <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
+                  {tag.posts.totalCount}
+                </Badge>
+              }
+              w={260}
+            />
+          ))}
+        </>
+      }
+    />
+  </>
+);
+
+const TopUsers: React.FC<{ users: TData['users']['edges']; loading: boolean }> = ({
+  users,
+  loading
+}) => (
   <>
     <Text weight={500} size='lg'>
       Top guys
     </Text>
-    <NavLink
-      label='Guy 1'
-      icon={
-        <Avatar color='cyan' radius='xl' size={32}>
-          MK
-        </Avatar>
+    <SkeletonLoading
+      isLoading={loading}
+      loadingContent={
+        <Flex direction='column' gap='xs'>
+          <Skeleton width={180} height={28} />
+          <Skeleton width={180} height={28} />
+        </Flex>
       }
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          3
-        </Badge>
+      loadedContent={
+        <>
+          {users.map(({ user }) => (
+            <NavLink
+              key={user.id}
+              label={user.email}
+              icon={
+                <Avatar color='cyan' radius='xl' size={28}>
+                  {user.name}
+                </Avatar>
+              }
+              rightSection={
+                <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
+                  {user.posts.totalCount}
+                </Badge>
+              }
+              w={260}
+            />
+          ))}
+        </>
       }
-      w={260}
-    />
-    <NavLink
-      label='Guy 2'
-      icon={
-        <Avatar color='cyan' radius='xl' size={32}>
-          MK
-        </Avatar>
-      }
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          13
-        </Badge>
-      }
-      w={260}
-    />
-    <NavLink
-      label='Guy 1'
-      icon={
-        <Avatar color='cyan' radius='xl' size={32}>
-          MK
-        </Avatar>
-      }
-      rightSection={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          3
-        </Badge>
-      }
-      w={260}
     />
   </>
 );
 
 export function LeftSideBar() {
+  const { data, loading } = useQuery<TData>(LeftSideBarGeneralDataQuery);
   return (
     <Box w={320} pr={40}>
       <NavGroup />
       <Space h='xl' />
-      <TagGroup />
+      <TopCategories categories={data?.categories?.edges ?? []} loading={loading} />
       <Space h='xl' />
-      <UserGroup />
+      <TopTags tags={data?.tags?.edges ?? []} loading={loading} />
+      <Space h='xl' />
+      <TopUsers users={data?.users?.edges ?? []} loading={loading} />
     </Box>
   );
 }

@@ -76,6 +76,8 @@ const Header: React.FC<Props> = ({ fixed = true }) => {
     );
   }
 
+  rightMenu = null;
+
   return (
     <header
       className={classNames('text-main body-font w-full z-50', fixed ? 'fixed' : '')}
@@ -97,19 +99,19 @@ const Header: React.FC<Props> = ({ fixed = true }) => {
                 strokeWidth='2'
                 d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'></path>
             </svg>
-            <h4 className='m-0 ml-4'>iamtan</h4>
+            <h4 className='m-0 ml-4'>Website này nói về gì đó</h4>
           </Link>
-          <Link
+          {/* <Link
             href='/topics'
             className='h-full flex items-center px-2 py-2 text-md mr-2 md:mr-8 link'>
             chủ đề
           </Link>
           <Link href='/new-post' className='h-full flex items-center px-2 py-2 text-md link'>
             viết bài
-          </Link>
+          </Link> */}
         </nav>
         <nav className='ml-auto flex flex-wrap items-center text-base justify-center'>
-          <span className='mr-4'>{isDarkEnabled ? 'dark' : 'light'}</span>
+          <span className='mr-4'>{isDarkEnabled ? 'Này là tối' : 'Này là sáng'}</span>
           <ActionIcon
             variant='outline'
             color={isDarkEnabled ? 'yellow' : 'blue'}

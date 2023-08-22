@@ -1,16 +1,16 @@
 import Head from 'next/head';
+import { forEach } from 'lodash';
+import React, { useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
+import { IconError404, IconFlag2Filled } from '@tabler/icons-react';
 import type { Category, Post, Profile, Tag, User } from '@prisma/client';
+import { Button, Center, Flex, Group, Loader, Text } from '@mantine/core';
 import Header from '@/components/Layout/Header';
-import { classNames } from '@/utils';
-import { formatDistance } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import Link from 'next/link';
-import { BASE_POST_URL } from '@/utils/config';
-import { Avatar, Badge, Flex, Group, rem, useMantineTheme } from '@mantine/core';
-import { map, toLower } from 'lodash';
 import { LeftSideBar } from '@/components/Layout/LeftSidebar';
 import { TweetCard } from '@/components/Layout/TweetCard';
+import { RightSidebar } from '@/components/Layout/RightSidebar';
+import { SkeletonLoading } from '@/components/runtime/SkeletonLoading';
+import { TweetCardSkeleton } from '@/components/Layout/TweetCardSkeleton';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int, $after: ID) {
@@ -24,6 +24,7 @@ const AllPostsQuery = gql`
         node {
           id
           title
+          content
           description
           createdAt
           modifiedAt
@@ -78,136 +79,99 @@ type TData = {
 };
 
 export default function Home() {
-  const theme = useMantineTheme();
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const { data, loading, error, fetchMore } = useQuery<TData>(AllPostsQuery, {
-    variables: { first: 20 }
+    variables: { first: 10 }
   });
 
   let main;
-  if (loading) {
-    main = <p>Loading...</p>;
-  }
+  const tweets: JSX.Element[] = [];
+
   // If error
-  else if (error) {
+  if (error) {
     main = <p>Oh no... {error.message}</p>;
+    tweets.push(
+      <React.Fragment key={`Error`}>
+        <IconError404 />
+      </React.Fragment>
+    );
   }
   // If has data
   else {
-    const { endCursor, hasNextPage } = data!.posts.pageInfo;
-    const mainGridClasses = 'grid grid-cols-12 gap-2 items-center rounded-sm';
+    forEach(data?.posts?.edges, el => {
+      tweets.push(<TweetCard key={el.node.id} post={el.node} author={el.node.author} />);
+    });
 
-    main = (
-      <>
-        <div className={classNames(mainGridClasses, 'text-sm px-4 py-2')}>
-          <div className='col-span-8'>Bài viết</div>
-          <div className='col-span-2'>Chủ đề</div>
-          <div className='col-span-2'>Thời gian</div>
-        </div>
-
-        {data?.posts?.edges?.map?.(({ node: post }, index) => (
-          <div
-            key={`User-#${post.id}`}
-            className={classNames(mainGridClasses, 'text-sm p-4')}
-            style={{
-              background:
-                index % 2 === 0
-                  ? theme.colorScheme === 'dark'
-                    ? theme.colors.dark[6]
-                    : theme.colors.gray[1]
-                  : theme.colorScheme === 'dark'
-                  ? theme.colors.dark[7]
-                  : theme.colors.gray[0]
-            }}>
-            <div className='col-span-8'>
-              <div className='flex items-center w-full'>
-                <Avatar src={post.author.profile.picture} radius='xl' mr={rem(8)}>
-                  {post.author.name}
-                </Avatar>
-                <div className='flex-1'>
-                  <div className='font-normal mb-1 text-base'>
-                    <Link href={`${BASE_POST_URL}/${post.slug}`} className='link-sm'>
-                      {post.title}
-                    </Link>
-                  </div>
-                  <Flex wrap='wrap'>
-                    {map(post.tags, ({ tag }) => (
-                      <Link key={tag.id} href={`/tag/${tag.name}`}>
-                        <Badge m={rem(2)} size='sm' radius='sm' sx={{ textTransform: 'lowercase' }}>
-                          {toLower(tag.name)}
-                        </Badge>
-                      </Link>
-                    ))}
-                  </Flex>
-                </div>
-              </div>
-            </div>
-            <div className='col-span-2'>
-              <Flex wrap='wrap'>
-                {map(post.categories, ({ category }) => (
-                  <Link key={category.id} href={`/topic/${category.slug}`}>
-                    <Badge
-                      m={rem(2)}
-                      size='lg'
-                      radius='sm'
-                      px={rem(4)}
-                      py={rem(2)}
-                      sx={{ textTransform: 'lowercase' }}>
-                      {toLower(category.name)}
-                    </Badge>
-                  </Link>
-                ))}
-              </Flex>
-            </div>
-            <div className='col-span-2'>
-              {post.createdAt
-                ? formatDistance(new Date(post.createdAt), new Date(), {
-                    includeSeconds: true,
-                    locale: vi
-                  })
-                : ''}
-            </div>
-          </div>
-        ))}
-
-        {hasNextPage ? (
-          <button
-            className='px-4 py-2 bg-blue-500 text-white rounded my-10'
-            onClick={() => {
-              fetchMore({
-                variables: { after: endCursor },
-                updateQuery: (prevResult, { fetchMoreResult }) => {
-                  fetchMoreResult.posts.edges = [
-                    ...prevResult.posts.edges,
-                    ...fetchMoreResult.posts.edges
-                  ];
-                  return fetchMoreResult;
-                }
-              });
-            }}>
-            more
-          </button>
-        ) : (
-          <p className='my-10 text-center font-medium'>You{"'"}ve reached the end! </p>
-        )}
-      </>
-    );
+    if (data?.posts?.pageInfo?.hasNextPage) {
+      if (isFetchingMore) {
+        tweets.push(
+          <Center key={`LoadingMoreContainer`} w='100%' mt='lg'>
+            <Flex align='center' gap='sm'>
+              <Loader size='sm' />
+              <Text>Đang tải...</Text>
+            </Flex>
+          </Center>
+        );
+      } else {
+        tweets.push(
+          <Center key={`LoadMoreContainer`} w='100%' mt='lg'>
+            <Button
+              onClick={async () => {
+                setIsFetchingMore(true);
+                await fetchMore({
+                  variables: { after: data?.posts?.pageInfo?.endCursor },
+                  updateQuery: (prevResult, { fetchMoreResult }) => {
+                    fetchMoreResult.posts.edges = [
+                      ...prevResult.posts.edges,
+                      ...fetchMoreResult.posts.edges
+                    ];
+                    return fetchMoreResult;
+                  }
+                });
+                setIsFetchingMore(false);
+              }}>
+              Tải thêm bài
+            </Button>
+          </Center>
+        );
+      }
+    } else {
+      tweets.push(
+        <Center key={`EndOfPageContainer`} w='100%' mt='lg'>
+          <Flex align='center' gap='sm'>
+            <IconFlag2Filled />
+            <Text>Hết bài rồi</Text>
+          </Flex>
+        </Center>
+      );
+    }
   }
 
   main = (
     <Flex align='start'>
       <LeftSideBar />
-      <Group className='flex-1' px='xl' display='flex'>
-        <TweetCard />
-      </Group>
-      <LeftSideBar />
+      <SkeletonLoading
+        isLoading={loading}
+        loadingContent={
+          <Group className='flex-1 gap-8' px='xl' display='flex'>
+            <TweetCardSkeleton />
+          </Group>
+        }
+        loadedContent={
+          <Group className='flex-1 gap-8' px='xl' display='flex'>
+            {tweets}
+          </Group>
+        }
+      />
+      <RightSidebar />
     </Flex>
   );
 
   return (
     <>
       <Head>
-        <title>iamtan - personal blog</title>
-        <meta name='description' content='IAMTAN' />
+        <title>Gì đó - Trang này nói về cái gì đó</title>
+        <meta name='description' content='Gì đó - Trang này nói về cái gì đó' />
         <meta name='viewport' content='width=device-width, initial-scale=1' />
         <link rel='icon' href='/favicon.ico' />
       </Head>
