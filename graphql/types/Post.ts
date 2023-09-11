@@ -2,8 +2,11 @@ import { map } from 'lodash';
 import generateSlug from 'slug';
 import prisma from '@/lib/prisma';
 import { builder } from '../builder';
+import { Prisma } from '@prisma/client';
+import { InputFieldRef } from '@pothos/core';
 
 builder.prismaObject('Post', {
+  
   fields: t => ({
     id: t.exposeID('id'),
     title: t.exposeString('title'),
@@ -32,10 +35,25 @@ const PostStatus = builder.enumType('PostStatus', {
 
 builder.queryField('posts', t =>
   t.prismaConnection({
+    args: {
+      orderBy: t.arg.string(),
+    },
     type: 'Post',
     cursor: 'id',
     totalCount: (_connection, _args, _ctx, _info) => prisma.post.count(),
-    resolve: (query, _parent, _args, _ctx, _info) => prisma.post.findMany({ ...query })
+    resolve: (query, _parent, args, _ctx, _info) => {
+      const orderBy : Prisma.PostOrderByWithAggregationInput = { };
+      (args.orderBy ?? "").split(",").forEach(sortBy => {
+        const [name, direction] = sortBy.split(":");
+        const key = name as keyof Prisma.PostOrderByWithAggregationInput;;
+        const order = direction as Prisma.SortOrder;
+        orderBy[key] = order;
+      });
+      return prisma.post.findMany({
+        ...query,
+        orderBy,
+      });
+    }
   })
 );
 

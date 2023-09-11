@@ -3,10 +3,11 @@ import { gql, useQuery } from '@apollo/client';
 import { Avatar, Box, Card, Flex, Group, NavLink, Skeleton, Space, Text, rem } from '@mantine/core';
 import { Category, Post, Profile, Tag, User } from '@prisma/client';
 import { SkeletonLoading } from '../runtime/SkeletonLoading';
+import { GraphQLPageInfo } from '@/utils/types/GraphQLPageInfo';
 
 const AllPostsQuery = gql`
-  query queryPosts($first: Int, $after: ID) {
-    posts(first: $first, after: $after) {
+  query queryPosts($first: Int) {
+    newestPosts: posts(first: $first, orderBy: "createdAt:asc") {
       pageInfo {
         endCursor
         hasNextPage
@@ -14,37 +15,53 @@ const AllPostsQuery = gql`
       edges {
         cursor
         node {
-          id
-          title
-          content
-          description
-          createdAt
-          modifiedAt
-          slug
-          author {
-            id
-            name
-            email
-            profile {
-              bio
-              picture
-            }
-          }
-          categories {
-            category {
-              id
-              name
-              slug
-              color
-            }
-          }
-          tags {
-            tag {
-              id
-              name
-            }
-          }
+          ...PostFragment
         }
+      }
+    }
+    oldestPosts: posts(first: $first, orderBy: "createdAt:desc") {
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+      edges {
+        cursor
+        node {
+          ...PostFragment
+        }
+      }
+    }
+  }
+
+  fragment PostFragment on Post {
+    id
+    title
+    content
+    description
+    createdAt
+    modifiedAt
+    slug
+    author {
+      id
+      name
+      email
+      profile {
+        bio
+        picture
+      }
+    }
+    categories {
+      category {
+        id
+        name
+        slug
+        color
+      }
+    }
+    tags {
+      tag {
+        id
+        name
       }
     }
   }
@@ -61,11 +78,12 @@ type TNode = {
 };
 
 type TData = {
-  posts: {
-    pageInfo: {
-      endCursor: any;
-      hasNextPage: boolean;
-    };
+  newestPosts: {
+    pageInfo: GraphQLPageInfo;
+    edges: TNode[];
+  };
+  oldestPosts: {
+    pageInfo: GraphQLPageInfo;
     edges: TNode[];
   };
 };
@@ -164,14 +182,14 @@ const OldestThings: React.FC<{ posts: TNode[]; loading: boolean }> = ({ posts, l
 
 export function RightSidebar() {
   const { data, loading } = useQuery<TData>(AllPostsQuery, {
-    variables: { first: 20 }
+    variables: { first: 2 }
   });
 
   return (
     <Box w={320} pl={40}>
-      <NewestThings posts={data?.posts.edges ?? []} loading={loading} />
+      <NewestThings posts={data?.newestPosts.edges ?? []} loading={loading} />
       <Space h='xl' />
-      <OldestThings posts={data?.posts.edges ?? []} loading={loading} />
+      <OldestThings posts={data?.oldestPosts.edges ?? []} loading={loading} />
       <Space h='xl' />
     </Box>
   );
