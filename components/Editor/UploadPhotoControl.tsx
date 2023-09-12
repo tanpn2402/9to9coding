@@ -1,10 +1,8 @@
-import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
+import { useRichTextEditorContext } from '@mantine/tiptap';
 import { IconPhotoShare, IconUpload } from '@tabler/icons-react';
-import { FileInput, Loader, Popover, rem } from '@mantine/core';
+import { Button, FileInput, Loader, Popover, rem } from '@mantine/core';
 import { useState } from 'react';
 import { forEach, isArray } from 'lodash';
-
-const ButtonStyles = { width: 38, height: 34 };
 
 export const UploadPhotoControl: React.FC<object> = () => {
   const [opened, setOpened] = useState(false);
@@ -41,19 +39,20 @@ export const UploadPhotoControl: React.FC<object> = () => {
     <>
       <Popover width={250} position='bottom' shadow='md' opened={opened} onChange={setOpened}>
         <Popover.Target>
-          <RichTextEditor.Control
+          <Button
+            px={rem(10)}
+            variant='default'
             onClick={() => setOpened(true)}
-            aria-label='Insert photo from device'
-            title='Insert photo from device'
-            style={ButtonStyles}>
+            aria-label='Chọn ảnh từ thiết bị'
+            title='Chọn ảnh từ thiết bị'>
             <IconPhotoShare stroke={1.5} size='1rem' />
-          </RichTextEditor.Control>
+          </Button>
         </Popover.Target>
         <Popover.Dropdown>
           <FileInput
             size='xs'
-            label='Your photo'
-            placeholder='Your photo'
+            label='Chọn ảnh'
+            placeholder='Chọn ảnh'
             icon={isLoading ? <Loader size={rem(14)} /> : <IconUpload size={rem(14)} />}
             onChange={uploadPhoto}
             disabled={isLoading}
