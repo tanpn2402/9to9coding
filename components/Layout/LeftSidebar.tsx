@@ -10,9 +10,11 @@ import {
   Space,
   Text
 } from '@mantine/core';
+import { useRouter } from 'next/router';
 import { Category, Tag, User } from '@prisma/client';
 import { IconHome2, IconGauge, IconCircleOff, IconHash } from '@tabler/icons-react';
 import { SkeletonLoading } from '../runtime/SkeletonLoading';
+import { IconSquareRoundedPlus } from '@tabler/icons-react';
 
 const LeftSideBarGeneralDataQuery = gql`
   query {
@@ -73,30 +75,40 @@ type TData = {
   };
 };
 
-const NavGroup = () => (
-  <>
-    <Text weight={500} size='lg'>
-      Gì đó
-    </Text>
-    <NavLink label='Trang này về nhà' icon={<IconHome2 size='1.5rem' stroke={1} />} />
-    <NavLink label='Trang nói về chủ đề' icon={<IconGauge size='1.5rem' stroke={1} />} />
-    <NavLink
-      label='Trang này bị disabled'
-      description='Chỉ có VIP mới vào được'
-      icon={<IconCircleOff size='1.5rem' stroke={1} />}
-      disabled
-    />
-    <NavLink
-      label='Trang này có chỉ mục'
-      description='Thông tin thêm nè'
-      icon={
-        <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
-          3
-        </Badge>
-      }
-    />
-  </>
-);
+const NavGroup = () => {
+  const router = useRouter();
+  return (
+    <>
+      <Text weight={500} size='lg'>
+        Gì đó
+      </Text>
+      <NavLink label='Trang này về nhà' icon={<IconHome2 size='1.5rem' stroke={1} />} />
+      <NavLink label='Trang nói về chủ đề' icon={<IconGauge size='1.5rem' stroke={1} />} />
+      <NavLink
+        label='Viết bài ở đây'
+        icon={<IconSquareRoundedPlus size='1.5rem' stroke={1} />}
+        onClick={() => {
+          router.push('/p/new');
+        }}
+      />
+      <NavLink
+        label='Trang này bị disabled'
+        description='Chỉ có VIP mới vào được'
+        icon={<IconCircleOff size='1.5rem' stroke={1} />}
+        disabled
+      />
+      <NavLink
+        label='Trang này có chỉ mục'
+        description='Thông tin thêm nè'
+        icon={
+          <Badge size='sm' variant='filled' color='green' w={22} h={22} p={0}>
+            3
+          </Badge>
+        }
+      />
+    </>
+  );
+};
 
 const TopCategories: React.FC<{ categories: TData['categories']['edges']; loading: boolean }> = ({
   categories,

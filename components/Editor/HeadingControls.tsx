@@ -10,12 +10,22 @@ import {
   IconAlphabetLatin
 } from '@tabler/icons-react';
 import { Level } from '@tiptap/extension-heading';
+import { uniqueId } from 'lodash';
 
 export const HeadingControls = () => {
   const { editor } = useRichTextEditorContext();
 
   const setHeading = (level: Level) => {
-    editor.chain().focus().setHeading({ level: level }).run();
+    editor
+      .chain()
+      .focus()
+      .setHeading({
+        level: level,
+        attributes: {
+          id: uniqueId('heading-')
+        }
+      })
+      .run();
   };
 
   const setParagraph = () => {

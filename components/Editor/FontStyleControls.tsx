@@ -172,18 +172,17 @@ export const FontStyleControls = () => {
               icon={<IconLink size='1rem' />}
               onClick={() => {
                 editor.chain().focus().setLink({ href: '' }).run();
-              }}
-              disabled={!editor?.can().setLink({ href: '' })}>
+              }}>
               <Text>Thêm liên kết</Text>
             </Menu.Item>
-            <Menu.Item
+            {/* <Menu.Item
               icon={<IconLinkOff size='1rem' />}
               onClick={() => {
                 editor.chain().focus().unsetLink().run();
               }}
               disabled={!editor?.can().unsetLink()}>
               <Text>Bỏ liên kết</Text>
-            </Menu.Item>
+            </Menu.Item> */}
           </Menu.Dropdown>
         </Menu>
       </Button.Group>

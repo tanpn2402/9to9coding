@@ -51,6 +51,11 @@
   border: 1px solid #373A40;
 }
 
+.ProseMirror img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .tableWrapper {
   overflow-x: auto;
 }

@@ -1,5 +1,5 @@
 import { RichTextEditor, Link } from '@mantine/tiptap';
-import { useEditor, BubbleMenu } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 import Highlight from '@tiptap/extension-highlight';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -7,7 +7,6 @@ import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import Image from '@tiptap/extension-image';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import Table from '@tiptap/extension-table';
 import TableCell from '@tiptap/extension-table-cell';
@@ -17,7 +16,7 @@ import { lowlight } from 'lowlight';
 import tsLanguageSyntax from 'highlight.js/lib/languages/typescript';
 import javaLanguageSyntax from 'highlight.js/lib/languages/java';
 import jsLanguageSyntax from 'highlight.js/lib/languages/javascript';
-import { IconChevronDown, IconChevronUp, IconRowInsertBottom, IconRowInsertTop } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import {
   Button,
   Card,
@@ -42,7 +41,10 @@ import { isNil, map } from 'lodash';
 import Sticky from 'react-stickynode';
 import { HeadingControls } from '@/components/Editor/HeadingControls';
 import { FontStyleControls } from '@/components/Editor/FontStyleControls';
-import BubbleMenuConfi from '@tiptap/extension-bubble-menu';
+import { Image } from '@/components/Editor/plugins';
+import Heading from '@/components/Editor/plugins/heading';
+import { LinkBubbleMenu } from '@/components/Editor/bubble-menus/LinkBubbleMenu';
+import { PhotoBubbleMenu } from '@/components/Editor/bubble-menus/PhotoBubbleMenu';
 
 // register languages that your are planning to use
 lowlight.registerLanguage('ts', tsLanguageSyntax);
@@ -269,6 +271,7 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({}),
+      Heading.configure({}),
       Underline,
       Link,
       Superscript,
@@ -304,6 +307,8 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
     setTagOptions,
     setTagSelected
   } = useOptions(form);
+
+  editor?.chain().setImageSize;
 
   const hanleSubmit =
     ({ ignoreEmptyCategory }: { ignoreEmptyCategory: boolean }) =>
@@ -450,62 +455,16 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
           </div>
         </div>
       </form>
-      
+
       {modalWarningEmptyCategory.modal}
       {modalWarningEmptyContent.modal}
       {modalNotifySuccess.modal}
 
       {editor && (
-        <BubbleMenu
-          editor={editor}
-          tippyOptions={{ duration: 100 }}
-          shouldShow={({ editor, view, state, oldState, from, to }) => {
-            return editor.isActive('image');
-          }}>
-          <Button.Group>
-            <Button
-              px={rem(10)}
-              variant='default'
-              onClick={() => editor.chain().focus().enter().run()}>
-              <IconRowInsertTop size="1rem" />
-            </Button>
-            <Button
-              px={rem(10)}
-              variant='default'
-              onClick={() => editor.chain().focus().enter().run()}>
-              <IconRowInsertBottom size="1rem" />
-            </Button>
-            <Button
-              px={rem(10)}
-              variant='default'
-              onClick={() => editor.chain().focus().setNode("paragraph", {
-                src: "https://www.freecodecamp.org/news/content/images/2021/08/monthInput.png",
-              }).run()}>
-              25%
-            </Button>
-            <Button
-              px={rem(10)}
-              variant='default'
-              onClick={() => {
-                // editor.chain().focus().
-                editor.chain().focus().deleteSelection().run()
-              }}>
-              50%
-            </Button>
-            <Button
-              px={rem(10)}
-              variant='default'
-              onClick={() => editor.chain().focus().toggleStrike().run()}>
-              75%
-            </Button>
-            <Button
-              px={rem(10)}
-              variant='default'
-              onClick={() => editor.chain().focus().toggleStrike().run()}>
-              100%
-            </Button>
-          </Button.Group>
-        </BubbleMenu>
+        <>
+          <PhotoBubbleMenu editor={editor} />
+          <LinkBubbleMenu editor={editor} />
+        </>
       )}
     </main>
   );
