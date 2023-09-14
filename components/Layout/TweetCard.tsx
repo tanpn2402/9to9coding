@@ -29,7 +29,8 @@ export const TweetCard: React.FC<Props> = ({ post, author, tags = [], categories
               <Group display='block'>
                 <Text weight={600}>{author.name}</Text>
                 <Text weight={400} size='xs'>
-                  {author.email} · {post.createdAt
+                  {author.email} ·{' '}
+                  {post.createdAt
                     ? formatDistance(new Date(post.createdAt), new Date(), {
                         includeSeconds: true,
                         locale: vi
@@ -39,7 +40,7 @@ export const TweetCard: React.FC<Props> = ({ post, author, tags = [], categories
               </Group>
             </Flex>
           </Group>
-          <TweetCardMenu />
+          <TweetCardMenu post={post} author={author} />
         </Group>
       </Card.Section>
 
