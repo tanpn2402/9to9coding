@@ -1,9 +1,10 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Avatar, Box, Card, Flex, Group, NavLink, Skeleton, Space, Text, rem } from '@mantine/core';
+import { Box, Card, Flex, Group, NavLink, Skeleton, Space, Text, rem } from '@mantine/core';
 import { Category, Post, Profile, Tag, User } from '@prisma/client';
 import { SkeletonLoading } from '../runtime/SkeletonLoading';
 import { GraphQLPageInfo } from '@/utils/types/GraphQLPageInfo';
+import { Avatar } from '../runtime/Avatar';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int) {

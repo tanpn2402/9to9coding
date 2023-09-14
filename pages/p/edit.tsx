@@ -1,5 +1,5 @@
 import { GetServerSideProps } from 'next';
-import PostEditorPage from './new-post';
+import PostEditorPage from './new';
 import { isEmpty, isNil } from 'lodash';
 import { PostTypes } from '@/utils/types/PostTypes';
 

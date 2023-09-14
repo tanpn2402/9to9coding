@@ -16,6 +16,7 @@ CREATE TABLE "users" (
     "name" TEXT NOT NULL,
     "surname" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
     "email_verified" TIMESTAMP(3),
     "modified_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
@@ -35,6 +36,8 @@ CREATE TABLE "profiles" (
     "city" TEXT,
     "province" TEXT,
     "mobile" TEXT,
+    "bio" TEXT,
+    "picture" TEXT,
     "modified_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
 
@@ -142,14 +145,33 @@ CREATE TABLE "tags_posts_links" (
     CONSTRAINT "tags_posts_links_pkey" PRIMARY KEY ("postId","tagId")
 );
 
+-- CreateTable
+CREATE TABLE "accounts" (
+    "id" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "failedAttempt" INTEGER NOT NULL DEFAULT 0,
+    "modified_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tags_name_key" ON "tags"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "accounts_username_key" ON "accounts"("username");
 
 -- AddForeignKey
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "users"("email") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -177,3 +199,7 @@ ALTER TABLE "tags_posts_links" ADD CONSTRAINT "tags_posts_links_postId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "tags_posts_links" ADD CONSTRAINT "tags_posts_links_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "tags"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_id_fkey" FOREIGN KEY ("id") REFERENCES "users"("email") ON DELETE RESTRICT ON UPDATE CASCADE;
+

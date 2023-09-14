@@ -43,6 +43,7 @@ model User {
   username      String    @unique
   emailVerified DateTime? @map(name: "email_verified")
   profile       Profile?
+  account       Account?
   posts         Post[]
 
   modifiedAt DateTime? @default(now()) @map(name: "modified_at")
@@ -203,4 +204,19 @@ model TagsOnPosts {
 
   @@id([postId, tagId])
   @@map(name: "tags_posts_links")
+}
+
+model Account {
+  id            String @id @default(cuid())
+  username      String @unique
+  password      String
+  status        String
+  failedAttempt Int    @default(0)
+
+  user User @relation(fields: [id], references: [email])
+
+  modifiedAt DateTime? @default(now()) @map(name: "modified_at")
+  createdAt  DateTime? @default(now()) @map(name: "created_at")
+
+  @@map(name: "accounts")
 }

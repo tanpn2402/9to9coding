@@ -1,20 +1,26 @@
 import { gql, useQuery } from '@apollo/client';
-import {
-  Avatar,
-  Badge,
-  Box,
-  ColorSwatch,
-  Flex,
-  NavLink,
-  Skeleton,
-  Space,
-  Text
-} from '@mantine/core';
+import { Badge, Box, ColorSwatch, Flex, NavLink, Skeleton, Space, Text } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { Category, Tag, User } from '@prisma/client';
-import { IconHome2, IconGauge, IconCircleOff, IconHash } from '@tabler/icons-react';
+import {
+  IconHome2,
+  IconGauge,
+  IconCircleOff,
+  IconHash,
+  IconNotification,
+  IconInfoCircle,
+  IconUserCircle,
+  IconUser,
+  IconWreckingBall,
+  IconSettings,
+  IconLogout,
+  IconUserPlus
+} from '@tabler/icons-react';
 import { SkeletonLoading } from '../runtime/SkeletonLoading';
 import { IconSquareRoundedPlus } from '@tabler/icons-react';
+import { useIdentity } from '@/utils/hooks/useIdentity';
+import { isNil } from 'lodash';
+import { Avatar } from '../runtime/Avatar';
 
 const LeftSideBarGeneralDataQuery = gql`
   query {
@@ -77,15 +83,74 @@ type TData = {
 
 const NavGroup = () => {
   const router = useRouter();
+  const user = useIdentity();
+
   return (
     <>
       <Text weight={500} size='lg'>
         Gì đó
       </Text>
+      {isNil(user) ? (
+        <>
+          <NavLink
+            label={
+              <Box>
+                <Flex align='center' gap='sm'>
+                  <Avatar color='cyan' radius='xl' size={40}>
+                    <IconUser size='1.5rem' stroke={1} />
+                  </Avatar>
+                  <Text>Đăng nhập</Text>
+                </Flex>
+              </Box>
+            }
+            onClick={() => {
+              router.push('/auth/signin');
+            }}
+          />
+          <NavLink
+            label={
+              <Box>
+                <Flex align='center' gap='sm'>
+                  <Avatar color='cyan' radius='xl' size={40}>
+                    <IconUserPlus size='1.5rem' stroke={1} />
+                  </Avatar>
+                  <Text>Đăng kí</Text>
+                </Flex>
+              </Box>
+            }
+            onClick={() => {
+              router.push('/auth/signup');
+            }}
+          />
+        </>
+      ) : (
+        <NavLink
+          label={
+            <Box>
+              <Flex align='center' gap='sm'>
+                <Avatar color='cyan' radius='xl' size={40}>
+                  {user.name}
+                </Avatar>
+                <Text>{user.name}</Text>
+              </Flex>
+            </Box>
+          }>
+          <NavLink label='Thông tin' icon={<IconUser size='1.5rem' stroke={1} />} />
+          <NavLink label='Cài đặt gì đó' icon={<IconSettings size='1.5rem' stroke={1} />} />
+          <NavLink
+            color='danger'
+            label='Đăng xuất'
+            icon={<IconLogout size='1.5rem' stroke={1} />}
+          />
+        </NavLink>
+      )}
+
       <NavLink label='Trang này về nhà' icon={<IconHome2 size='1.5rem' stroke={1} />} />
       <NavLink label='Trang nói về chủ đề' icon={<IconGauge size='1.5rem' stroke={1} />} />
       <NavLink
         label='Viết bài ở đây'
+        disabled={isNil(user)}
+        description={isNil(user) ? 'Cần phải đăng nhập vào được nha' : undefined}
         icon={<IconSquareRoundedPlus size='1.5rem' stroke={1} />}
         onClick={() => {
           router.push('/p/new');

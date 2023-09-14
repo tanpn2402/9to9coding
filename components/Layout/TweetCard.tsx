@@ -1,10 +1,11 @@
 import React from 'react';
 import { vi } from 'date-fns/locale';
 import { formatDistance } from 'date-fns';
-import { Card, Group, Text, Spoiler, Flex, Avatar, TypographyStylesProvider } from '@mantine/core';
+import { Card, Group, Text, Spoiler, Flex, TypographyStylesProvider } from '@mantine/core';
 import type { Category, Post, Tag, User } from '@prisma/client';
 import { TweetCardMenu } from './TweetCardMenu';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { Avatar } from '../runtime/Avatar';
 
 type Props = {
   post: Post;
@@ -26,9 +27,9 @@ export const TweetCard: React.FC<Props> = ({ post, author, tags = [], categories
                 </Avatar>
               </Group>
               <Group display='block'>
-                <Text weight={600}>{author.email}</Text>
+                <Text weight={600}>{author.name}</Text>
                 <Text weight={400} size='xs'>
-                  {post.createdAt
+                  {author.email} · {post.createdAt
                     ? formatDistance(new Date(post.createdAt), new Date(), {
                         includeSeconds: true,
                         locale: vi
