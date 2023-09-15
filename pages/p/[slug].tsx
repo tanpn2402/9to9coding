@@ -93,7 +93,7 @@ export default function Home({ post }: Props) {
 
         <div className='flex'>
           <TypographyStylesProvider className='max-w-[768px]'>
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div className='post-content' dangerouslySetInnerHTML={{ __html: post.content }} />
           </TypographyStylesProvider>
 
           <div className='pl-8 w-[256px]'>

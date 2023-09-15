@@ -7,15 +7,12 @@ import {
   IconGauge,
   IconCircleOff,
   IconHash,
-  IconNotification,
-  IconInfoCircle,
-  IconUserCircle,
   IconUser,
-  IconWreckingBall,
   IconSettings,
   IconLogout,
   IconUserPlus
 } from '@tabler/icons-react';
+import Sticky from 'react-stickynode';
 import { SkeletonLoading } from '../runtime/SkeletonLoading';
 import { IconSquareRoundedPlus } from '@tabler/icons-react';
 import { useIdentity } from '@/utils/hooks/useIdentity';
@@ -294,13 +291,15 @@ export function LeftSideBar() {
   const { data, loading } = useQuery<TData>(LeftSideBarGeneralDataQuery);
   return (
     <Box w={320} pr={40}>
-      <NavGroup />
-      <Space h='xl' />
-      <TopCategories categories={data?.categories?.edges ?? []} loading={loading} />
-      <Space h='xl' />
-      <TopTags tags={data?.tags?.edges ?? []} loading={loading} />
-      <Space h='xl' />
-      <TopUsers users={data?.users?.edges ?? []} loading={loading} />
+      <Sticky enabled={true} top={100}>
+        <NavGroup />
+        <Space h='xl' />
+        <TopCategories categories={data?.categories?.edges ?? []} loading={loading} />
+        <Space h='xl' />
+        <TopTags tags={data?.tags?.edges ?? []} loading={loading} />
+        <Space h='xl' />
+        <TopUsers users={data?.users?.edges ?? []} loading={loading} />
+      </Sticky>
     </Box>
   );
 }

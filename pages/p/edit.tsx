@@ -1,3 +1,4 @@
+import prisma from '@/lib/prisma';
 import { GetServerSideProps } from 'next';
 import PostEditorPage from './new';
 import { isEmpty, isNil } from 'lodash';

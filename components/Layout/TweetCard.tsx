@@ -1,11 +1,21 @@
 import React from 'react';
 import { vi } from 'date-fns/locale';
 import { formatDistance } from 'date-fns';
-import { Card, Group, Text, Spoiler, Flex, TypographyStylesProvider } from '@mantine/core';
+import {
+  Card,
+  Group,
+  Text,
+  Spoiler,
+  Flex,
+  TypographyStylesProvider,
+  Title,
+  NavLink
+} from '@mantine/core';
 import type { Category, Post, Tag, User } from '@prisma/client';
 import { TweetCardMenu } from './TweetCardMenu';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { Avatar } from '../runtime/Avatar';
+import Link from 'next/link';
 
 type Props = {
   post: Post;
@@ -16,7 +26,7 @@ type Props = {
 
 export const TweetCard: React.FC<Props> = ({ post, author, tags = [], categories = [] }) => {
   return (
-    <Card shadow='sm' radius='md'>
+    <Card shadow='sm' radius='md' w="100%">
       <Card.Section inheritPadding py='xs'>
         <Group position='apart'>
           <Group>
@@ -59,8 +69,12 @@ export const TweetCard: React.FC<Props> = ({ post, author, tags = [], categories
           </Flex>
         }>
         <Card.Section inheritPadding pb='md'>
-          <TypographyStylesProvider>
+          <Link href={'/p/' + post.slug}>
+            <Title order={2}>{post.title}</Title>
+          </Link>
+          <TypographyStylesProvider mt='lg'>
             <div
+              className='post-content'
               dangerouslySetInnerHTML={{
                 __html: post.content
               }}

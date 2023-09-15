@@ -1,4 +1,4 @@
-import { map } from 'lodash';
+import { map, padStart } from 'lodash';
 import generateSlug from 'slug';
 import prisma from '@/lib/prisma';
 import { builder } from '../builder';
@@ -6,7 +6,6 @@ import { Prisma } from '@prisma/client';
 import { InputFieldRef } from '@pothos/core';
 
 builder.prismaObject('Post', {
-  
   fields: t => ({
     id: t.exposeID('id'),
     title: t.exposeString('title'),
@@ -36,22 +35,22 @@ const PostStatus = builder.enumType('PostStatus', {
 builder.queryField('posts', t =>
   t.prismaConnection({
     args: {
-      orderBy: t.arg.string(),
+      orderBy: t.arg.string()
     },
     type: 'Post',
     cursor: 'id',
     totalCount: (_connection, _args, _ctx, _info) => prisma.post.count(),
     resolve: (query, _parent, args, _ctx, _info) => {
-      const orderBy : Prisma.PostOrderByWithAggregationInput = { };
-      (args.orderBy ?? "").split(",").forEach(sortBy => {
-        const [name, direction] = sortBy.split(":");
-        const key = name as keyof Prisma.PostOrderByWithAggregationInput;;
+      const orderBy: Prisma.PostOrderByWithAggregationInput = {};
+      (args.orderBy ?? '').split(',').forEach(sortBy => {
+        const [name, direction] = sortBy.split(':');
+        const key = name as keyof Prisma.PostOrderByWithAggregationInput;
         const order = direction as Prisma.SortOrder;
         orderBy[key] = order;
       });
       return prisma.post.findMany({
         ...query,
-        orderBy,
+        orderBy
       });
     }
   })
@@ -76,10 +75,12 @@ builder.mutationField('createPost', t =>
         throw new Error('You have to be logged in to perform this action');
       }
 
+      const lastIndex = await prisma.post.count();
+
       return prisma.post.create({
         ...query,
         data: {
-          slug: generateSlug(title),
+          slug: generateSlug(title + '-' + padStart('post' + lastIndex + 1, 10)),
           title,
           description,
           content,

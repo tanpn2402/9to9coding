@@ -1,8 +1,9 @@
-import { Card, Text, Button, Group, Avatar, Flex, rem, Space, Title } from '@mantine/core';
+import { Card, Text, Button, Group, Flex, rem, Space, Title } from '@mantine/core';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import type { Profile, User } from '@prisma/client';
 import { IconAt, IconEdit, IconUser } from '@tabler/icons-react';
 import Link from 'next/link';
+import { Avatar } from '../runtime/Avatar';
 
 type Props = Partial<Omit<User & { profile: Profile }, 'emailVerified'>> & {
   postId: string;

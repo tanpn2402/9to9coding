@@ -1,17 +1,4 @@
-import { RichTextEditor, Link } from '@mantine/tiptap';
-import { useEditor } from '@tiptap/react';
-import Highlight from '@tiptap/extension-highlight';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import TextAlign from '@tiptap/extension-text-align';
-import Superscript from '@tiptap/extension-superscript';
-import SubScript from '@tiptap/extension-subscript';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import Dropcursor from '@tiptap/extension-dropcursor';
-import Table from '@tiptap/extension-table';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import TableRow from '@tiptap/extension-table-row';
+import dynamic from 'next/dynamic';
 import { lowlight } from 'lowlight';
 import tsLanguageSyntax from 'highlight.js/lib/languages/typescript';
 import javaLanguageSyntax from 'highlight.js/lib/languages/java';
@@ -24,14 +11,14 @@ import {
   Group,
   Input,
   Loader,
+  LoadingOverlay,
   MultiSelect,
   Text,
   rem
 } from '@mantine/core';
+import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useDisclosure } from '@mantine/hooks';
-import { InsertPhotoControl } from '@/components/Editor/InsertPhotoControl';
-import { UploadPhotoControl } from '@/components/Editor/UploadPhotoControl';
 import { gql, useQuery, useMutation, FetchResult } from '@apollo/client';
 import { Category, Tag } from '@prisma/client';
 import { UseFormReturnType, useForm } from '@mantine/form';
@@ -39,12 +26,13 @@ import { useModal } from '@/utils/hooks/useModal';
 import { PostTypes } from '@/utils/types/PostTypes';
 import { isNil, map } from 'lodash';
 import Sticky from 'react-stickynode';
-import { HeadingControls } from '@/components/Editor/HeadingControls';
-import { FontStyleControls } from '@/components/Editor/FontStyleControls';
-import { Image } from '@/components/Editor/plugins';
-import Heading from '@/components/Editor/plugins/heading';
 import { LinkBubbleMenu } from '@/components/Editor/bubble-menus/LinkBubbleMenu';
 import { PhotoBubbleMenu } from '@/components/Editor/bubble-menus/PhotoBubbleMenu';
+import { useTextEditor } from '@/components/Editor/useTextEditor';
+
+const TextEditor = dynamic(() => import('@/components/Editor/Editor'), {
+  loading: () => <LoadingOverlay visible />
+});
 
 // register languages that your are planning to use
 lowlight.registerLanguage('ts', tsLanguageSyntax);
@@ -114,6 +102,7 @@ const UpdatePostMutation = gql`
 type MutationResult = {
   result: {
     id?: string;
+    slug?: string;
   };
 };
 
@@ -200,6 +189,34 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
     useMutation<MutationResult>(NewPostMutation);
   const [updatePost, { loading: isSubmittingUpdate }] =
     useMutation<MutationResult>(UpdatePostMutation);
+  const [postSlug, setPostSlug] = useState(post?.slug);
+  const router = useRouter();
+  const editor = useTextEditor({
+    content: post?.content
+  });
+
+  const form = useForm<NewPostForm>({
+    initialValues: {
+      title: post?.title ?? 'Tiêu đề',
+      categories: map(post?.categories, el => el.categoryId),
+      tags: map(post?.tags, el => el.tagId)
+    },
+    validate: {
+      title: value => (String(value).length > 6 ? null : 'Hãy nhập một tiêu đề thật ý nghĩa')
+    }
+  });
+
+  const {
+    loading,
+    tagOptions,
+    tagSelected,
+    categoryOptions,
+    categorySelected,
+    setCategoryOptions,
+    setCategorySelected,
+    setTagOptions,
+    setTagSelected
+  } = useOptions(form);
 
   const modalWarningEmptyCategory = useModal({
     title: 'cảnh báo',
@@ -248,67 +265,21 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
         <div>
           <Text fz='md'>thành công rồi nha</Text>
           <Group position='center' mt='xl'>
-            <Button variant='light' onClick={triggerClose}>
+            <Button variant='subtle' onClick={triggerClose}>
               đã hiểu
+            </Button>
+            <Button
+              variant='light'
+              onClick={() => {
+                router.push('/p/' + postSlug);
+              }}>
+              xem bài
             </Button>
           </Group>
         </div>
       );
     }
   });
-
-  const form = useForm<NewPostForm>({
-    initialValues: {
-      title: post?.title ?? 'Tiêu đề',
-      categories: map(post?.categories, el => el.categoryId),
-      tags: map(post?.tags, el => el.tagId)
-    },
-    validate: {
-      title: value => (String(value).length > 6 ? null : 'Hãy nhập một tiêu đề thật ý nghĩa')
-    }
-  });
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({}),
-      Heading.configure({}),
-      Underline,
-      Link,
-      Superscript,
-      SubScript,
-      Highlight,
-      Image.configure({
-        HTMLAttributes: {
-          alt: ''
-        }
-      }),
-      Dropcursor,
-      Table.configure({
-        resizable: true
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      CodeBlockLowlight.configure({
-        lowlight
-      })
-    ],
-    content: post?.content
-  });
-  const {
-    loading,
-    tagOptions,
-    tagSelected,
-    categoryOptions,
-    categorySelected,
-    setCategoryOptions,
-    setCategorySelected,
-    setTagOptions,
-    setTagSelected
-  } = useOptions(form);
-
-  editor?.chain().setImageSize;
 
   const hanleSubmit =
     ({ ignoreEmptyCategory }: { ignoreEmptyCategory: boolean }) =>
@@ -342,6 +313,7 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
 
         if (resp.data?.result.id) {
           // Success
+          setPostSlug(resp.data?.result.slug);
           modalNotifySuccess.triggerOpen();
         } else if (resp.errors) {
           // error
@@ -370,17 +342,7 @@ const PostEditorPage: React.FC<PageProps> = ({ post }) => {
         />
 
         <div className='flex'>
-          <RichTextEditor editor={editor} className='max-w-[768px] min-h-[300px] flex-1'>
-            <RichTextEditor.Toolbar sticky stickyOffset={0}>
-              <HeadingControls />
-              <FontStyleControls />
-              <Button.Group>
-                <InsertPhotoControl />
-                <UploadPhotoControl />
-              </Button.Group>
-            </RichTextEditor.Toolbar>
-            <RichTextEditor.Content />
-          </RichTextEditor>
+          <TextEditor editor={editor} />
           <div className='pl-4 w-[256px]'>
             <Sticky enabled={true} top={50}>
               <Card shadow='xs' padding='lg' radius='xs'>

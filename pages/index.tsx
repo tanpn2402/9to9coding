@@ -14,7 +14,7 @@ import { TweetCardSkeleton } from '@/components/Layout/TweetCardSkeleton';
 
 const AllPostsQuery = gql`
   query queryPosts($first: Int, $after: ID) {
-    posts(first: $first, after: $after) {
+    posts(first: $first, after: $after, orderBy: "createdAt:desc") {
       pageInfo {
         endCursor
         hasNextPage
@@ -158,7 +158,7 @@ export default function Home() {
           </Group>
         }
         loadedContent={
-          <Group className='flex-1 gap-8' px='xl' display='flex'>
+          <Group className='flex-1 gap-8 max-w-[768px]' px='xl' display='flex'>
             {tweets}
           </Group>
         }
